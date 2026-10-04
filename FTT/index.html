@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+   <head>
+      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+      <meta name="google" content="notranslate">
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Fontamin Font Tester</title>
+      <link rel="stylesheet" href="style.css">
+      <script src="script.js" defer></script>
+   </head>
+   <body spellcheck="false">
+      <script>try{if(localStorage.getItem("fft-dark")==="1")document.body.classList.add("darkmode")}catch(e){}</script>
+      <div id="dropzone">
+         <div class="dz-card">
+            <div class="dz-icon">⬇</div>
+            <b>Drop font files here</b>
+            <small>ttf · otf · woff · woff2 — multiple files allowed</small>
+         </div>
+      </div>
+      <header>
+         <p style="margin-top: 15px;">
+            <span class="fontheader" id="fontname">Fallback font</span>
+         </p>
+         <div class="dynamic" >
+            <div id="Test" class="tabcontent" style="display:block;">
+               <p contenteditable="true" dir="auto" style="text-align:start;"></p>
+            </div>
+         </div>
+      </header>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <footer>
+         <div class="footer-container">
+         <div class="pc-tab">
+            <input id="tab1" type="radio" name="pct" autocomplete="off" />
+            <input id="tab2" type="radio" name="pct" autocomplete="off" />
+            <input id="tab3" type="radio" name="pct" autocomplete="off" />
+            <input id="tab4" type="radio" name="pct" autocomplete="off" />
+            <input checked="checked" id="tab5" type="radio" name="pct" autocomplete="off" />
+            <input id="tab6" type="radio" name="pct" autocomplete="off" />
+            <section style="padding-top:5px;">
+               <div class="tab1">
+                  <p class="font-slider">
+                     <label>Size:</label>
+                     <span>
+                     <input class="slider" autocomplete="off" id="fontsizeinput" type="range" min="10" max="250" value="26" step="1" style="height:4px;">
+                     </span>
+                  </p>
+                  <p class="font-slider">
+                     <label>Height:</label>
+                     <span>
+                     <input class="slider" autocomplete="off" id="fontheightinput" type="range" min="1" max="2" value="1.5" step="0.01" style="height:4px;">
+                     </span>
+                  </p>
+                  <p class="font-slider"><input class="hidden" type="checkbox" id="outline" autocomplete="off"><label for="outline">Outline</label></p>
+                  <p class="font-slider"><input class="hidden" type="checkbox" id="guidetoggle" autocomplete="off"><label for="guidetoggle" title="Show ascender, descender, x-height and cap-height lines">Guides</label></p>
+                  <div class="aligns" role="radiogroup" aria-label="Text alignment">
+                     <input class="hidden" type="radio" name="align" id="alright" value="right" autocomplete="off"><label for="alright" title="Align right (click again to go back to the text's own alignment)">Right</label>
+                     <input class="hidden" type="radio" name="align" id="alleft" value="left" autocomplete="off"><label for="alleft" title="Align left (click again to go back to the text's own alignment)">Left</label>
+                     <input class="hidden" type="radio" name="align" id="aljustify" value="justify" autocomplete="off"><label for="aljustify" title="Justify (click again to go back to the text's own alignment)">Justify</label>
+                  </div>
+                  <p class="right-side-header" id="text3"></p>
+               </div>
+               <div class="tab2">
+                  <button id="randbutton" type="button" style="font-size: 20px;">🎲</button>
+                  <div id="axes"></div>
+                  <p class="right-side-header" id="text1"></p>
+               </div>
+               <div class="tab3">
+                  <p class="font-slider"><input class="hidden" type="checkbox" id="showall" autocomplete="off"><label for="showall">All</label></p>
+                  <div class="otadd">
+                     <input type="text" id="ottag" maxlength="4" placeholder="tag" autocomplete="off" autocapitalize="off" spellcheck="false" title="OpenType feature tag: exactly 4 letters/digits, e.g. ss05, cv12, salt">
+                     <input type="text" id="otval" maxlength="3" placeholder="on/off" autocomplete="off" autocapitalize="off" spellcheck="false" title="Default value: 1, 0, on or off (empty = on)">
+                     <button type="button" id="otadd" class="btn" title="Add this feature to the list">Add</button>
+                  </div>
+                  <div id="features"></div>
+                  <p class="right-side-header" id="text2"></p>
+               </div>
+               <div class="tab4">
+                  <div style="direction:ltr;text-align:center;">
+                     <a href="https://fontamin.com/" target="_blank"><svg class="fontamin-logo" viewBox="0 0 35.166 35.957" role="img" aria-label="Fontamin"><g transform="matrix(0.1808294,0,0,0.1808294,-41.132058,-16.305489)" fill="none"><g transform="matrix(5.4557778,0,0,5.4557778,228.76969,91.506299)" fill="none" stroke="currentColor" stroke-width="1.45488"><path d="m 27.879766,22.664017 c -3.617537,0.442468 -7.048319,0.531094 -10.501202,0.534409 -3.638092,0 -6.705308,-0.218802 -8.643148,-0.888471 C 6.979691,21.702833 6.391134,20.560196 6.413014,18.826572 6.437324,16.8642 6.716023,15.750958 7.185896,14.04275 L 1.013229,12.867846 C 1.119315,9.102672 2.120061,6.0118074 4.33262,4.1818214 6.665853,2.2517166 10.433678,1.205442 15.989941,1.3113071 c 0.957428,0 1.94005,0.061884 3.412437,0.1989116 l 0.320027,0.828798 c -3.004227,2.7739317 -4.826478,7.7869433 -4.826478,12.8631663 0,2.561097 0.564025,4.55861 1.88303,5.918723 1.319224,1.360333 3.301709,1.96613 5.821918,1.96613"/><path d="m 26.550816,1.6264714 c 5.366854,3.1184906 7.68373,8.1891876 7.68373,17.0204166 0,6.391912 -1.233692,10.306932 -3.945519,12.678179 -2.711827,2.371025 -7.118601,3.328011 -13.726884,3.328011 -4.721939,0 -8.677626,-0.806255 -11.378844,-2.615908 C 2.48208,30.227738 0.931454,27.463531 0.931454,23.110463"/></g><path d="m 354.8169,172.22339 c -7.07566,0 -11.16632,-3.82229 -11.16632,-9.70471 0,-9.74509 5.09183,-16.28121 13.32217,-16.28121 9.62156,0 14.92291,8.70534 16.78924,24.01638 -6.0792,1.30593 -11.49491,1.96954 -18.94509,1.96954 z" fill="none" stroke="currentColor" stroke-width="7.9375" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4"/></g></svg></a>
+                     FFT(Fontamin Font Tester) - v1.0<br>
+                     Loaded fonts are not saved. Refresh clears them.
+                  </div>
+               </div>
+               <div class="tab5">
+                  <div id="fontlist"></div>
+                  <button type="button" id="pickbtn" class="btn">+ Font</button>
+                  <input type="file" id="fontfile" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+                  <input type="url" id="fonturl" placeholder="https://…/font.woff2" autocomplete="off">
+                  <button type="button" id="urlbtn" class="btn">Load</button>
+                  <p class="status" id="fontstatus"></p>
+               </div>
+               <div class="tab6">
+                  <button type="button" id="wikitoggle" class="btn" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki</button>
+                  <div id="testgroup">
+                     <div id="testlist"></div>
+                     <button type="button" id="testadd" class="btn" title="Save the text currently on screen as a new test">+</button>
+                     <div id="dangerzone" title="Danger zone"><span class="dzlabel">danger</span></div>
+                  </div>
+                  <div id="wikigroup">
+                     <div id="wikilangs"></div>
+                     <input type="text" id="wikilang" maxlength="12" placeholder="lang" autocomplete="off" autocapitalize="off" spellcheck="false" title="Wikipedia language code (fa, ar, en, de, …)">
+                     <button type="button" id="wikibtn" class="btn" title="Fetch a long random Wikipedia article in this language">Fetch article</button>
+                     <p class="status" id="wikistatus"></p>
+                  </div>
+               </div>
+            </section>
+            <nav>
+               <ul>
+                  <li class="tab5">
+                     <label for="tab5">Font</label>
+                  </li>
+                  <li class="tab6">
+                     <label for="tab6">Test</label>
+                  </li>
+                  <li class="tab1">
+                     <label for="tab1">Layout</label>
+                  </li>
+
+                  <li class="tab2">
+                     <label for="tab2">Variation</label>
+                  </li>
+                  <li class="tab3">
+                     <label for="tab3">OpenType</label>
+                  </li>
+                  <li class="tab4">
+                     <label for="tab4">About</label>
+                  </li>
+               </ul>
+            </nav>
+         </div>
+         <div id="div2" class="hide">Copied</div>
+      </footer>
+      <input type="checkbox" id="negative" class="toggle" autocomplete="off">
+      <label class="DarkModeLabel" for="negative">
+            <svg class="icon off" viewBox="0 0 110 110" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="m 53.753687,27.510227 v -1.03e-4 c -0.150732,-0.0042 -0.309633,-0.002 -0.47607,0.0077 -14.397312,0.879879 -25.773663,12.85591 -25.773663,27.432314 0,15.214896 12.3339,27.5488 27.548799,27.5488 12.037991,0 22.268905,-7.71713 26.014232,-18.478131 0.685213,-1.954418 -1.346983,-3.152204 -3.122317,-1.509245 -3.574025,3.309282 -8.362747,5.333005 -13.618663,5.333005 -11.072462,0 -20.050685,-8.978223 -20.050685,-20.050685 0,-7.420572 4.03496,-13.898912 10.02281,-17.363923 2.182664,-1.26288 1.716554,-2.854062 -0.544443,-2.919732 z M 110,55 C 110,85.328283 85.328283,110 55,110 24.671717,110 0,85.328283 0,55 0,24.671717 24.671717,0 55,0 c 30.328283,0 55,24.671717 55,55 z"/></svg>
+      <svg class="icon on" viewBox="0 0 110 110" aria-hidden="true"><path fill="currentColor" d="m 27.506959,33.973485 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474237,6.474237 6.4742376,6.4742376 0 0 1 -6.474237,6.474238 z m 54.986076,54.986082 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474237,6.474238 6.4742376,6.4742376 0 0 1 -6.474237,6.474238 z M 33.981193,82.485329 a 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,6.474238 z M 88.96728,27.499247 a 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 6.4742376,6.4742376 0 0 1 -6.474237,-6.474238 6.4742376,6.4742376 0 0 1 6.474237,-6.474237 6.4742376,6.4742376 0 0 1 6.474238,6.474237 z M 16.118968,61.466528 A 6.4742376,6.4742376 0 0 1 9.64473,54.99229 a 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474238,6.474237 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 z m 77.762069,0 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474233,6.474237 6.4742376,6.4742376 0 0 1 -6.474233,6.474238 z M 61.474238,93.873323 A 6.4742376,6.4742376 0 0 1 55,100.34756 6.4742376,6.4742376 0 0 1 48.525762,93.873323 6.4742376,6.4742376 0 0 1 55,87.399086 a 6.4742376,6.4742376 0 0 1 6.474238,6.474237 z m 0,-77.762064 A 6.4742376,6.4742376 0 0 1 55,22.585496 6.4742376,6.4742376 0 0 1 48.525762,16.111259 6.4742376,6.4742376 0 0 1 55,9.6370206 6.4742376,6.4742376 0 0 1 61.474238,16.111259 Z M 80.930931,55.00525 c 2e-6,14.317685 -11.606776,25.924463 -25.924461,25.924461 -14.317683,0 -25.924459,-11.606777 -25.924457,-25.924461 0,-14.317682 11.606775,-25.924457 25.924457,-25.924457 14.317684,-2e-6 25.924461,11.606774 25.924461,25.924457 z"/></svg>
+      </label>
+</body>
+</html>

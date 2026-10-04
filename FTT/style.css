@@ -1,0 +1,1048 @@
+:root {
+  --accent: #ff4242;
+  --accent-bg: #ff424222;
+}
+
+/* =================== Reset & Base =================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  background-color: #f6f6f6;
+  color: #222;
+  font-family: monospace;
+  text-align: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Dark Mode ---- */
+body.darkmode {
+  background-color: #222;
+  color: #f5f5f5;
+}
+
+/* =================== Header =================== */
+header {
+  padding: 8px;
+}
+
+header img {
+  max-width: 56px;
+  height: auto;
+}
+
+a {
+  font-size: 12px;
+  color: black;
+  text-underline-offset: 4px;
+  text-decoration-color: #ff4242;
+}
+body.darkmode a {
+  color: white;
+}
+
+.fontheader {
+  font-size: 15px;
+  color: black;
+}
+body.darkmode .fontheader {
+  color: white;
+}
+
+/* =================== Main Text =================== */
+.dynamic {
+  position: relative;
+  font-size: 26px;
+  font-family: system-ui, sans-serif;   /* the fallback font, until a font is loaded */
+  line-height: 1.5em;
+  flex-direction: column;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.dynamic p,
+.tabcontent p {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* placeholder shown in the Wiki box before any article is fetched */
+.wikihint {
+  padding-top: 30px;
+  text-align: center;
+  font: 16px/1.5 monospace;
+  opacity: .5;
+}
+
+/* Outline mode */
+body.outline .dynamic {
+  -webkit-text-stroke: 1px currentColor;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =================== Layout test (Layout Fa / Layout En) =================== */
+.layout {
+  width: 100%;
+  text-align: start;
+  line-height: 1.3em;
+}
+.layout .sizelabel {
+  font: 11px monospace;
+  line-height: 1.3em;
+  direction: ltr;
+  text-align: left;
+  opacity: .6;
+  margin-bottom: 6px;
+}
+.layout .lh {
+  font-size: 60px;
+  line-height: 1.2em;
+}
+.layout .ls {
+  font-size: 24px;
+  line-height: 1.2em;
+  margin-top: 8px;
+}
+.layout .multicolumn3 {
+  column-count: 3;
+  column-gap: 28px;
+  font-size: 16px;
+  line-height: 1.3em;
+  margin: 20px 0 32px;
+}
+.layout[dir="rtl"] .multicolumn3 {
+  text-align: right;
+}
+.layout .multicolumn3 p {
+  max-width: none;
+}
+.layout .lh3 {
+  font-size: 18px;
+  line-height: 1.3em;
+  font-weight: 700;
+  margin-top: 16px;
+  break-after: avoid;
+}
+.layout ol {
+  list-style: decimal;
+  padding-inline-start: 1.6em;
+  margin: 14px 0;
+  font-size: 16px;
+  line-height: 1.3em;
+}
+@media (max-width: 700px) {
+  .layout .multicolumn3 { column-count: 1; }
+  .layout .lh { font-size: 40px; }
+}
+
+/* Layout Fa: every line-height is 1.5 */
+.layout[dir="rtl"],
+.layout[dir="rtl"] .sizelabel,
+.layout[dir="rtl"] .lh,
+.layout[dir="rtl"] .ls,
+.layout[dir="rtl"] .multicolumn3,
+.layout[dir="rtl"] .lh3,
+.layout[dir="rtl"] ol {
+  line-height: 1.5em;
+}
+
+/* =================== Footer =================== */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  z-index: 100;
+  border-top: 1.5px solid #AAA;
+  height: 100px;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+body.darkmode footer {
+  background-color: black;
+  border-top-color: #444;
+}
+
+.footer-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 6px 10px 14px 10px;
+  box-sizing: border-box;
+  line-height: 1.3em;
+  font-size: 12px;
+}
+
+/* =================== Tabs =================== */
+.pc-tab > input,
+.pc-tab section > div {
+  display: none;
+}
+
+#tab1:checked ~ section .tab1,
+#tab2:checked ~ section .tab2,
+#tab3:checked ~ section .tab3,
+#tab4:checked ~ section .tab4,
+#tab5:checked ~ section .tab5,
+#tab6:checked ~ section .tab6 {
+  display: inline-flex;
+}
+
+#tab1:checked ~ nav .tab1 label,
+#tab2:checked ~ nav .tab2 label,
+#tab3:checked ~ nav .tab3 label,
+#tab4:checked ~ nav .tab4 label,
+#tab5:checked ~ nav .tab5 label,
+#tab6:checked ~ nav .tab6 label {
+  color: black;
+}
+body.darkmode #tab1:checked ~ nav .tab1 label,
+body.darkmode #tab2:checked ~ nav .tab2 label,
+body.darkmode #tab3:checked ~ nav .tab3 label,
+body.darkmode #tab4:checked ~ nav .tab4 label,
+body.darkmode #tab5:checked ~ nav .tab5 label,
+body.darkmode #tab6:checked ~ nav .tab6 label {
+  color: white;
+}
+
+.pc-tab nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.pc-tab nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+}
+
+.pc-tab ul li label {
+  display: inline-block;
+  color: #4445;
+  cursor: pointer;
+  position: relative;
+  padding: 4px 8px 0;
+  border-radius: 10px;
+}
+
+/* dot under each tab title */
+.pc-tab ul li label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .6;
+}
+#tab1:checked ~ nav .tab1 label::after,
+#tab2:checked ~ nav .tab2 label::after,
+#tab3:checked ~ nav .tab3 label::after,
+#tab4:checked ~ nav .tab4 label::after,
+#tab5:checked ~ nav .tab5 label::after,
+#tab6:checked ~ nav .tab6 label::after {
+  background: var(--accent);
+  opacity: 1;
+}
+
+body.darkmode .pc-tab ul li label {
+  color: #5e5e5e;
+}
+
+/* =================== Sliders =================== */
+.font-slider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 6px;
+  position: relative;
+}
+
+.font-slider label {
+  white-space: nowrap;
+}
+
+.font-slider span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #ccc;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #ccc;
+}
+body.darkmode .slider::-webkit-slider-runnable-track {
+  background: #333;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 15px;
+  background: var(--accent);
+  cursor: pointer;
+  margin-top: -6px;
+  border-radius: 8px;
+}
+
+.slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #ccc;
+}
+body.darkmode .slider::-moz-range-track {
+  background: #333;
+}
+.slider::-moz-range-thumb {
+  width: 30px;
+  height: 15px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+body.darkmode .slider {
+  background: #ff424288;
+}
+
+/* =================== Checkbox Buttons =================== */
+.hidden {
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+}
+
+input.hidden+label {
+  color: #222;
+  background-color: #ECECEE;
+  padding: 6px;
+  border-radius: 25px;
+  cursor: pointer;
+}
+input.hidden:checked+label {
+  color: var(--accent);
+  background-color: var(--accent-bg);
+}
+input.hidden+label:hover {
+  background-color: #dbdbdb;
+}
+input.hidden:checked+label:hover {
+  background-color: #ff4242;
+  color: white;
+}
+body.darkmode input.hidden+label {
+  color: #aaa;
+  background-color: #111;
+}
+body.darkmode input.hidden:checked+label {
+  color: var(--accent);
+  background-color: var(--accent-bg);
+}
+body.darkmode input.hidden+label:hover {
+  background-color: #282828;
+}
+body.darkmode input.hidden:checked+label:hover {
+  background-color: #ff4242;
+  color: black;
+}
+
+/* =================== Buttons =================== */
+#randbutton {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  line-height: 1;
+  padding: 0 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 2em;
+}
+#randbutton:hover {
+  background: var(--accent);
+  border-radius: 5px;
+  color: white;
+}
+
+/* =================== Right-Side Header (CSS code preview) =================== */
+.right-side-header,
+.status {
+  position: absolute;
+  right: 10px;
+  bottom: 34px;
+  font-size: 12px !important;
+  max-width: calc(100% - 20px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.status { cursor: default; }
+.right-side-header:hover {
+  text-decoration: underline;
+}
+
+/* =================== Copy Alert =================== */
+.show, .hide {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 80px;
+  border-radius: 5px;
+  font-size: 16px;
+  padding: 8px;
+  background: green;
+  color: white;
+  transition: opacity 0.5s;
+  z-index: 2000;
+}
+.show { opacity: 1; }
+.hide { opacity: 0; pointer-events: none; }
+
+.fontamin-logo {
+  width: 16px;
+  height: auto;
+  vertical-align: middle;
+  color: inherit;
+}
+
+body.darkmode .show, body.darkmode .hide {
+  color: black;
+  background: white;
+}
+[contenteditable] {
+  outline: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-focus-ring-color: transparent;
+  -moz-outline-style: none;
+}
+
+.tabcontent {
+  display: none;
+}
+
+/* =================== Dark mode toggle =================== */
+.toggle {
+  display: none;
+}
+
+.DarkModeLabel {
+  position: fixed;
+  left: 14px;
+  bottom: 110px;
+  z-index: 90;
+  width: 38px;
+  height: 38px;
+  background: white;
+  color: #222;
+  border: 1.5px solid #AAA;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s;
+}
+body.darkmode .DarkModeLabel {
+  background: black;
+  border-color: #444;
+}
+/* hover only changes the border, so the icon never blends with the background */
+.DarkModeLabel:hover,
+body.darkmode .DarkModeLabel:hover {
+  border-color: var(--accent);
+}
+
+.icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.icon.on { color: var(--accent); }
+
+/* scoped to the dark-mode icons: a bare .on would also hide every button that uses the .on state */
+.icon.on { opacity: 0 }
+.icon.off { opacity: 1 }
+
+.toggle:checked + label .icon.on { opacity: 1; transform: scale(1); }
+.toggle:checked + label .icon.off { opacity: 0; transform: scale(0.8); }
+
+/* =================== Drop zone =================== */
+#dropzone {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(245, 245, 241, .75);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+#dropzone.active { display: flex; }
+body.darkmode #dropzone { background: rgba(20, 20, 20, .75); }
+
+.dz-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(440px, 100%);
+  padding: 44px 24px;
+  border: 3px dashed var(--accent);
+  border-radius: 28px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  animation: dzpulse 1.2s ease-in-out infinite;
+}
+.dz-card b { font-size: 22px; }
+.dz-card small { font-size: 13px; opacity: .8; }
+.dz-icon {
+  width: 64px;
+  height: 64px;
+  line-height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+@keyframes dzpulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* =================== Font / Test / Wiki tabs =================== */
+/* width:max-content + min-width:100% → centered when it fits, scrollable when it doesn't */
+#tab5:checked ~ section .tab5,
+#tab6:checked ~ section .tab6 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  min-width: 100%;
+  padding-top: 3px;
+  padding-bottom: 6px;
+}
+#fontlist, #testlist, #wikilangs { display: contents; }
+#testgroup, #wikigroup { display: contents; }
+/* Test tab: the Wiki button switches the row between tests and the Wikipedia menu */
+.tab6.wikimode #testgroup { display: none; }
+.tab6:not(.wikimode) #wikigroup { display: none; }
+
+/* Danger zone: separate, red dashed box at the end of the Test row */
+#dangerzone {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  height: 38px;
+  margin-inline-start: 18px;
+  padding: 0 8px 0 10px;
+  border: 1.5px dashed var(--accent);
+  border-radius: 19px;
+}
+#dangerzone .dzlabel {
+  font-size: 10px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: .8;
+  padding-inline-end: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 32px;
+  border-radius: 16px;
+  background: #ECECEE;
+  color: #222;
+}
+.chip.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.chipname {
+  height: 100%;
+  max-width: 150px;
+  padding: 0 4px 0 12px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: 12px monospace;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chipname.nox { padding-right: 12px; }
+.chipx {
+  height: 100%;
+  padding: 0 10px 1px 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: 20px monospace;
+  cursor: pointer;
+  opacity: .5;
+}
+.chipx:hover { opacity: 1; color: var(--accent); }
+body.darkmode .chip { background: #111; color: #aaa; }
+body.darkmode .chip.active { background: var(--accent-bg); color: var(--accent); }
+
+.sizelabel {
+  font: 11px monospace !important;
+  line-height: 1.3em !important;
+  direction: ltr;
+  text-align: left;
+  opacity: .6;
+  margin: 16px 0 4px;
+}
+
+/* Refresh (↻) button on font chips */
+.chipr {
+  height: 100%;
+  padding: 0 2px 3px 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: 20px monospace;
+  cursor: pointer;
+  opacity: .5;
+  transition: transform .3s, opacity .15s, color .15s;
+}
+.chipr:hover { opacity: 1; color: var(--accent); }
+.chipr:active { transform: rotate(180deg); }
+.chipx { padding-left: 2px; }
+
+.btn {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 16px;
+  background: #ECECEE;
+  color: #222;
+  font: 12px monospace;
+  cursor: pointer;
+}
+.btn:hover { background: #dbdbdb; }
+body.darkmode .btn { background: #111; color: #aaa; }
+body.darkmode .btn:hover { background: #282828; }
+/* Auto-reload toggle (fixed, next to the dark-mode button) */
+#autobtn {
+  position: fixed;
+  left: 60px;
+  bottom: 110px;
+  z-index: 90;
+  width: 38px;
+  height: 38px;
+  padding: 0 0 3px;
+  border: 1.5px dashed #AAA;
+  border-radius: 50%;
+  background: white;
+  color: #222;
+  font: 22px monospace;
+  cursor: pointer;
+  opacity: .6;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity .15s, border-color .15s, color .15s;
+}
+#autobtn:hover { opacity: 1; border-color: var(--accent); }
+#autobtn.on { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-bg); opacity: 1; }
+body.darkmode #autobtn { background: black; color: #aaa; border-color: #444; }
+body.darkmode #autobtn.on { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
+input.hidden + label.zero { opacity: .5; }
+.btn.on { background: var(--accent-bg); color: var(--accent); }
+.btn.on:hover { background: var(--accent-bg); }
+body.darkmode .btn.on { background: var(--accent-bg); color: var(--accent); }
+.btn.danger:hover { background: var(--accent); color: #fff; }
+body.darkmode .btn.danger:hover { background: var(--accent); color: #000; }
+
+#fonturl,
+#wikilang {
+  flex: 0 0 180px;
+  width: 180px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1.5px solid #AAA;
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  font: 16px monospace;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+#wikilang { flex-basis: 70px; width: 70px; text-align: center; }
+#fonturl:focus,
+#wikilang:focus { border-color: var(--accent); }
+body.darkmode #fonturl,
+body.darkmode #wikilang { border-color: #444; }
+
+#wikibtn.busy {
+  color: var(--accent);
+  background: var(--accent-bg);
+  pointer-events: none;
+  animation: wikipulse .8s ease-in-out infinite;
+}
+#wikibtn.err { background: var(--accent); color: #fff; }
+body.darkmode #wikibtn.err { color: #000; }
+@keyframes wikipulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* =================== Add-test dialog =================== */
+#testmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .35);
+}
+#testmodal.open { display: flex; }
+.tm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 18px;
+  border: 1.5px solid #AAA;
+  border-radius: 20px;
+  background: #fff;
+  color: #222;
+  text-align: start;
+}
+.tm-card label { font-size: 12px; opacity: .7; }
+.tm-card input,
+.tm-card textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid #AAA;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: 16px/1.5 monospace;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.tm-card textarea { height: 200px; resize: vertical; }
+.tm-card #tmabout { height: 90px; }
+.tm-card input:focus,
+.tm-card textarea:focus { border-color: var(--accent); }
+.tm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.tm-card .btn.primary { background: var(--accent-bg); color: var(--accent); }
+.tm-card .btn.primary:hover { background: var(--accent); color: #fff; }
+body.darkmode .tm-card { background: #000; border-color: #444; color: #f5f5f5; }
+body.darkmode .tm-card input,
+body.darkmode .tm-card textarea { border-color: #444; }
+body.darkmode .tm-card .btn.primary { background: var(--accent-bg); color: var(--accent); }
+body.darkmode .tm-card .btn.primary:hover { background: var(--accent); color: #000; }
+
+/* =================== Dynamic axes / features =================== */
+#axes, #features { display: contents; }
+.nohint {
+  font-size: 12px;
+  opacity: .6;
+  padding: 10px 6px;
+  white-space: nowrap;
+}
+/* layout + variation sliders: fixed track width, independent of the label length */
+.tab1 .font-slider { width: auto; flex: 0 0 auto; }
+.tab1 .font-slider label { flex: 0 0 auto; }
+.tab1 .font-slider span { flex: 0 0 160px; width: 160px; }
+.tab2 .font-slider { width: auto; flex: 0 0 auto; }
+.tab2 .font-slider label { flex: 0 0 auto; }
+.tab2 .font-slider span { flex: 0 0 160px; width: 160px; }
+.tab3 .font-slider { width: auto; }
+
+/* =================== Responsive =================== */
+@media (max-width: 600px) {
+  .font-slider label {
+    font-size: 12px;
+  }
+  .font-slider {
+    gap: 6px;
+  }
+  footer {
+    padding-bottom: 8px;
+  }
+  .pc-tab nav ul {
+    gap: 4px;
+    justify-content: flex-start;
+  }
+  .right-side-header,
+  .status {
+    font-size: 10px !important;
+    bottom: 33px;
+  }
+}
+
+/* =================== Horizontal scroll (no scrollbar, drag to scroll) =================== */
+.pc-tab > section {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* old Edge */
+}
+.pc-tab > section::-webkit-scrollbar {
+  display: none;                  /* Chrome / Safari */
+}
+
+#tab1:checked ~ section,
+#tab2:checked ~ section,
+#tab3:checked ~ section,
+#tab5:checked ~ section,
+#tab6:checked ~ section {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+}
+.pc-tab > section.dragging {
+  cursor: grabbing !important;
+}
+.pc-tab > section.dragging * {
+  cursor: grabbing !important;
+  pointer-events: none;
+}
+
+#tab1:checked ~ section .tab1,
+#tab2:checked ~ section .tab2,
+#tab3:checked ~ section .tab3 {
+  display: inline-flex;
+  min-width: max-content;
+  white-space: nowrap;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+
+::selection {
+  background-color: #ff8080;
+}
+
+#tab1:checked ~ section,
+#tab2:checked ~ section {
+  touch-action: pan-x;
+}
+
+#tab1:checked ~ section .tab1 input[type=range],
+#tab2:checked ~ section .tab2 input[type=range] {
+  touch-action: none;
+  cursor: pointer;
+}
+
+/* ===== Slider value inside thumb ===== */
+.slider-value {
+  position: absolute;
+  top: 60%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  color: white;
+  background: transparent;
+  pointer-events: none;
+  user-select: none;
+  font-weight: bold;
+}
+
+/* =================== Info button (i) + popup =================== */
+#aboutbtn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 90;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1.5px solid #AAA;
+  border-radius: 50%;
+  background: white;
+  color: #222;
+  font: italic bold 17px Georgia, serif;
+  cursor: pointer;
+  opacity: .4;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity .2s, background .2s, color .2s, border-color .2s;
+}
+#aboutbtn:hover { opacity: 1; }
+#aboutbtn:active { transform: scale(.94); }
+/* dashed + dimmer when there is nothing to show */
+#aboutbtn.off { cursor: default; border-style: dashed; }
+#aboutbtn.off:hover { opacity: .5; }
+body.darkmode #aboutbtn { background: black; color: #ddd; border-color: #444; }
+
+#aboutpop {
+  position: fixed;
+  top: 46px;
+  right: 10px;
+  z-index: 95;
+  width: min(360px, calc(100% - 20px));
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1.5px solid #AAA;
+  border-radius: 14px;
+  background: white;
+  color: #222;
+  font: 13px/1.6 system-ui, monospace;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity .15s, transform .15s, visibility .15s;
+}
+#aboutpop.open { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+#aboutpop.empty { opacity: .8; font: 12px monospace; }
+#aboutpop b { display: block; margin-bottom: 6px; }
+#aboutpop a { display: block; font-size: 12px; font-family: monospace; }
+body.darkmode #aboutpop { background: black; color: #f5f5f5; border-color: #444; }
+
+/* =================== Same row height in every footer tab =================== */
+/* fixed height + centered content, so the controls sit at the same y in Layout, Variation, OpenType, Font and Test */
+#tab1:checked ~ section .tab1,
+#tab2:checked ~ section .tab2,
+#tab3:checked ~ section .tab3,
+#tab5:checked ~ section .tab5,
+#tab6:checked ~ section .tab6 {
+  height: 40px;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* =================== OpenType: add your own feature =================== */
+.otadd {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-inline-end: 4px;
+}
+#ottag, #otval {
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid #AAA;
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  font: 16px monospace;
+  text-align: center;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+#ottag { width: 72px; flex: 0 0 72px; }
+#otval { width: 84px; flex: 0 0 84px; }
+#ottag:focus, #otval:focus { border-color: var(--accent); }
+#ottag.err, #otval.err { border-color: var(--accent); background: var(--accent-bg); }
+body.darkmode #ottag, body.darkmode #otval { border-color: #444; }
+body.darkmode #ottag:focus, body.darkmode #otval:focus,
+body.darkmode #ottag.err, body.darkmode #otval.err { border-color: var(--accent); }
+.font-slider .otx {
+  padding: 0 2px 2px 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: 20px monospace;
+  cursor: pointer;
+  opacity: .5;
+}
+.font-slider .otx:hover { opacity: 1; color: var(--accent); }
+.tab3 .font-slider { gap: 2px; }
+
+/* =================== Test About: author line =================== */
+#aboutpop .aboutby { margin-top: 8px; font: 12px monospace; opacity: .85; }
+#aboutpop .aboutby:first-child { margin-top: 0; }
+#aboutpop .aboutby a { display: inline; }
+.tm-card input.err { border-color: var(--accent); background: var(--accent-bg); }
+
+/* =================== Layout: guides + alignment =================== */
+#guidesvg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+#guidesvg path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: .75;
+}
+#guidesvg #guidedash { stroke-dasharray: 2 3; }
+
+.aligns {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-inline-start: 4px;
+}
+
+/* the chosen alignment wins over the text's own (inline style) alignment */
+.dynamic.al-right   :is(p, div, ol, li):not(.sizelabel) { text-align: right !important; }
+.dynamic.al-left    :is(p, div, ol, li):not(.sizelabel) { text-align: left !important; }
+.dynamic.al-justify :is(p, div, ol, li):not(.sizelabel) { text-align: justify !important; }
