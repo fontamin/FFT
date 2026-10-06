@@ -185,19 +185,17 @@
   } catch (e) {}
   const saveFeats = () => { try { localStorage.setItem(FEAT_KEY, JSON.stringify(customFeats)); } catch (e) {} };
 
-  // add (or update) one custom feature; fonts other than the active one pick up the new default when activated
+  // add (or update) one custom feature
   function putCustom(tag, on) {
     const ex = customFeats.find(f => f.tag === tag);
     if (ex) ex.on = on; else customFeats.push({ tag, on });
     featOn[tag] = on;
-    fonts.forEach(r => { if (r !== active && r.st && r.st.feats) delete r.st.feats[tag]; });
     saveFeats();
   }
 
   function removeCustom(tag) {
     customFeats = customFeats.filter(f => f.tag !== tag);
     delete featOn[tag];
-    fonts.forEach(r => { if (r.st && r.st.feats) delete r.st.feats[tag]; });
     saveFeats();
     buildFeatures(); applyStyles();
   }
@@ -259,8 +257,7 @@
   function setInfo(i, st) {
     info = i;
     savedAxes = (st && st.axes) || {};
-    Object.keys(featOn).forEach(k => delete featOn[k]);
-    if (st && st.feats) Object.assign(featOn, st.feats);
+    // OpenType choices (featOn) are global: they are kept when the font changes, only the axes are per font
     buildAxes();
     buildFeatures();
     applyStyles();
@@ -438,7 +435,7 @@
   }
 
   function activate(rec) {
-    if (active) active.st = { axes: { ...axisVals }, feats: { ...featOn } };
+    if (active) active.st = { axes: { ...axisVals } };
     active = rec;
     target.style.fontFamily = rec.css;
     nameEl.textContent = titleOf(rec);
@@ -544,7 +541,7 @@
 
   async function addFont(buf, fileName, src) {
     const m = await makeFace(buf, fileName);
-    const rec = { id: ++counter, src, st: { axes: {}, feats: {} }, ...m };
+    const rec = { id: ++counter, src, st: { axes: {} }, ...m };
     fonts.push(rec);
     activate(rec);
     sigOf(rec).then(x => { rec.sig = x; });
@@ -663,7 +660,7 @@
     const css = 'system-ui, sans-serif';
     const rec = {
       id: ++counter, system: true, family: 'system-ui', css, face: null, file: 'Fallback font', name: 'Fallback font',
-      version: '', src: null, st: { axes: {}, feats: {} },
+      version: '', src: null, st: { axes: {} },
       info: { generic: true, axes: [], features: COMMON },
       status: '',
       metrics: measureMetrics(css, null)
