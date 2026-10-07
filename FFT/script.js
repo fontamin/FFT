@@ -153,7 +153,8 @@
   };
 
   /* =================== Build UI from font info =================== */
-  let savedAxes = {};
+  // Variation values are remembered by axis tag and shared by all fonts (clamped to each font's range)
+  const axisGlobal = {};
 
   function buildAxes() {
     axesBox.textContent = '';
@@ -162,12 +163,13 @@
     if (!info.axes.length) { hint(axesBox, 'No variable axes in this font'); updateBubbles(); return; }
     info.axes.forEach(a => {
       const step = (a.max - a.min) > 10 ? 1 : 0.01;
-      const start = savedAxes[a.tag] != null ? savedAxes[a.tag] : a.def;
+      const g = axisGlobal[a.tag];
+      const start = g != null ? Math.min(a.max, Math.max(a.min, g)) : a.def;
       axisVals[a.tag] = start;
       const { p, inp } = makeSlider({
         id: 'ax_' + cleanId(a.tag), label: axisLabel(a) + ':',
         min: a.min, max: a.max, step, value: start,
-        onInput: v => { axisVals[a.tag] = v; applyStyles(); }
+        onInput: v => { axisVals[a.tag] = axisGlobal[a.tag] = v; applyStyles(); }
       });
       axesBox.appendChild(p);
       attachBubble(inp);
@@ -213,12 +215,16 @@
       : info.generic ? 'Font tables unreadable: showing a generic list of shaping features'
       : 'Also show the ' + nHidden + ' shaping features hidden by default (init, medi, fina, ccmp, locl…)';
     const mine = customFeats.map(f => f.tag);
-    const tags = [...list.filter(t => !mine.includes(t)), ...mine];   // your own features at the end
+    // features you changed in another font that this font doesn't have: kept (and applied), shown dimmed
+    const have = new Set(pool);
+    const carried = Object.keys(featOn).filter(t => featOn[t] !== DEFAULT_ON.has(t) && !have.has(t) && !mine.includes(t)).sort();
+    const tags = [...list.filter(t => !mine.includes(t)), ...carried, ...mine];   // your own features at the end
     if (!tags.length) { hint(featBox, 'No OpenType features'); return; }
     tags.forEach(tag => {
       const cf = customFeats.find(f => f.tag === tag);
       if (!(tag in featOn)) featOn[tag] = cf ? cf.on : DEFAULT_ON.has(tag);
-      const p = document.createElement('p'); p.className = 'font-slider';
+      const p = document.createElement('p'); p.className = 'font-slider' + (carried.includes(tag) ? ' carried' : '');
+      if (carried.includes(tag)) p.title = 'Not in this font: kept from another font';
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.className = 'hidden'; cb.id = 'f_' + cleanId(tag);
       cb.autocomplete = 'off'; cb.checked = featOn[tag];
@@ -254,10 +260,9 @@
   $('#otadd').addEventListener('click', addCustom);
   [otTag, otVal].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); }));
 
-  function setInfo(i, st) {
+  function setInfo(i) {
     info = i;
-    savedAxes = (st && st.axes) || {};
-    // OpenType choices (featOn) are global: they are kept when the font changes, only the axes are per font
+    // OpenType choices (featOn) and variation values (axisGlobal) are global: they are kept when the font changes
     buildAxes();
     buildFeatures();
     applyStyles();
@@ -435,12 +440,11 @@
   }
 
   function activate(rec) {
-    if (active) active.st = { axes: { ...axisVals } };
     active = rec;
     target.style.fontFamily = rec.css;
     nameEl.textContent = titleOf(rec);
     document.title = rec.system ? 'Fontamin Font Tester' : titleOf(rec) + ' – FFT';
-    setInfo(rec.info, rec.st);
+    setInfo(rec.info);
     setStatus(rec.status);
     renderList();
   }
@@ -541,7 +545,7 @@
 
   async function addFont(buf, fileName, src) {
     const m = await makeFace(buf, fileName);
-    const rec = { id: ++counter, src, st: { axes: {} }, ...m };
+    const rec = { id: ++counter, src, ...m };
     fonts.push(rec);
     activate(rec);
     sigOf(rec).then(x => { rec.sig = x; });
@@ -660,7 +664,7 @@
     const css = 'system-ui, sans-serif';
     const rec = {
       id: ++counter, system: true, family: 'system-ui', css, face: null, file: 'Fallback font', name: 'Fallback font',
-      version: '', src: null, st: { axes: {} },
+      version: '', src: null,
       info: { generic: true, axes: [], features: COMMON },
       status: '',
       metrics: measureMetrics(css, null)
