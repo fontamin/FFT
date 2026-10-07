@@ -1046,3 +1046,6 @@ body.darkmode #ottag.err, body.darkmode #otval.err { border-color: var(--accent)
 .dynamic.al-right   :is(p, div, ol, li):not(.sizelabel) { text-align: right !important; }
 .dynamic.al-left    :is(p, div, ol, li):not(.sizelabel) { text-align: left !important; }
 .dynamic.al-justify :is(p, div, ol, li):not(.sizelabel) { text-align: justify !important; }
+
+/* OpenType features kept from another font that this font does not have */
+.font-slider.carried label { opacity: .55; }
