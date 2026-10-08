@@ -409,6 +409,7 @@
 
   /* =================== Font list (select / reload / remove) =================== */
   function renderList() {
+    $('.tab5').classList.toggle('nofonts', !fonts.some(r => !r.system));
     listEl.textContent = '';
     if (!fonts.length) { hint(listEl, 'No fonts — drop files here'); return; }
     fonts.forEach(r => {
@@ -557,17 +558,40 @@
     try {
       const buf = await getBuf(rec.src, true);
       const m = await makeFace(buf, rec.file);
-      if (!fonts.includes(rec)) { try { document.fonts.delete(m.face); } catch (e) {} return; }   // removed meanwhile
+      if (!fonts.includes(rec)) { try { document.fonts.delete(m.face); } catch (e) {} return false; }   // removed meanwhile
       const old = rec.face;
       Object.assign(rec, m);
       if (old) { try { document.fonts.delete(old); } catch (e) {} }
       if (rec === active) activate(rec); else renderList();
       setStatus(m.status + (auto ? ' (auto-reloaded)' : ' (reloaded)'));
       sigOf(rec).then(x => { rec.sig = x; });
+      return true;
     } catch (e) {
       setStatus('Reload failed: ' + rec.file + (rec.src.file && !rec.src.handle ? ' — add the file again' : ''));
+      return false;
     } finally { rec.reloading = false; }
   }
+
+  // every font except the fallback font, one after the other
+  async function reloadAll() {
+    const list = fonts.filter(r => !r.system && !r.reloading);
+    if (!list.length) return;
+    const bad = [];
+    for (const r of list) { if (fonts.includes(r) && !(await reloadFont(r))) bad.push(r.file); }
+    setStatus('Reloaded ' + (list.length - bad.length) + ' of ' + list.length + ' fonts' + (bad.length ? ' — failed: ' + bad.join(', ') : ''));
+  }
+
+  function removeAllFonts() {
+    fonts.filter(r => !r.system).forEach(r => { if (r.face) { try { document.fonts.delete(r.face); } catch (e) {} } });
+    const keep = fonts.filter(r => r.system);
+    fonts.length = 0; fonts.push(...keep);
+    if (active && fonts.includes(active)) { renderList(); return; }
+    active = null;
+    if (fonts[0]) activate(fonts[0]); else renderList();
+    setStatus('');
+  }
+  $('#reloadall').addEventListener('click', reloadAll);
+  $('#removeall').addEventListener('click', removeAllFonts);
 
   /* =================== Auto reload (watches the font files) =================== */
   // Local files (picked / dropped in Chrome or Edge, via file handles) and fonts loaded by URL are checked
@@ -1820,6 +1844,8 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     });
   });
   window.addEventListener('resize', updateBubbles);
+  // the sticky "↻ all / × all" group gets its shadow once the row has been scrolled
+  section.addEventListener('scroll', () => $('.tab5').classList.toggle('scrolled', section.scrollLeft > 0), { passive: true });
 
   /* Hover on a tab title acts like a click (mouse devices only) */
   if (window.matchMedia('(hover: hover)').matches) {
