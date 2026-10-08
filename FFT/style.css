@@ -1094,6 +1094,6 @@ body.darkmode .right-side-header {
 @media (max-width: 600px) {
   .right-side-header {
     right: 8px;
-    bottom: 82px;
+    bottom: 92px;
   }
 }
