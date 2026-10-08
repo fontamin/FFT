@@ -221,21 +221,25 @@ body.darkmode #tab6:checked ~ nav .tab6 label {
   color: white;
 }
 
-.pc-tab nav ul {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-}
-
 .pc-tab nav {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 16px;
+  display: flex;
+  justify-content: center;
 }
+
+.pc-tab nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* یا space-around */
+  padding: 0;
+  margin: 0;
+  gap: clamp(0px, 10vw, 20px);
+}
+
 
 .pc-tab ul li label {
   display: inline-block;
@@ -469,7 +473,7 @@ body.darkmode .show, body.darkmode .hide {
 .DarkModeLabel {
   position: fixed;
   left: 14px;
-  bottom: 110px;
+  bottom: 95px;
   z-index: 90;
   width: 38px;
   height: 38px;
@@ -698,16 +702,15 @@ body.darkmode .btn:hover { background: #282828; }
 #autobtn {
   position: fixed;
   left: 60px;
-  bottom: 110px;
+  bottom: 95px;
   z-index: 90;
   width: 38px;
   height: 38px;
-  padding: 0 0 3px;
   border: 1.5px dashed #AAA;
   border-radius: 50%;
   background: white;
   color: #222;
-  font: 22px monospace;
+  font: 20px monospace;
   cursor: pointer;
   opacity: .6;
   -webkit-tap-highlight-color: transparent;
@@ -1066,3 +1069,31 @@ body.darkmode #ottag.err, body.darkmode #otval.err { border-color: var(--accent)
 
 /* OpenType features kept from another font that this font does not have */
 .font-slider.carried label { opacity: .55; }
+
+/* Final layout adjustment: keep the footer compact and move the side header above it. */
+footer {
+  height: 85px;
+}
+
+.right-side-header {
+  position: fixed;
+  right: 12px;
+  bottom: 92px;
+  z-index: 110;
+  margin: 0;
+  padding: 3px 7px;
+  background: white;
+  border-bottom: 1px solid black;
+}
+
+body.darkmode .right-side-header {
+  background: #1e1e1e;
+  border-bottom: 1px solid white;
+}
+
+@media (max-width: 600px) {
+  .right-side-header {
+    right: 8px;
+    bottom: 82px;
+  }
+}
