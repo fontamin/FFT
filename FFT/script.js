@@ -409,7 +409,7 @@
 
   /* =================== Font list (select / reload / remove) =================== */
   function renderList() {
-    $('.tab5').classList.toggle('nofonts', !fonts.some(r => !r.system));
+    $('.tab5').classList.toggle('nofonts', fonts.filter(r => !r.system).length < 2);
     listEl.textContent = '';
     if (!fonts.length) { hint(listEl, 'No fonts — drop files here'); return; }
     fonts.forEach(r => {
