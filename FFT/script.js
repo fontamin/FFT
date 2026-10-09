@@ -1816,7 +1816,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     el.value = text; document.body.appendChild(el); el.select();
     document.execCommand('copy'); el.remove();
   }
-  [t1, t2, t3].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));
+  [t1, t2, t3, statusEl, wikiStatus].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));
 
   /* =================== Tabs: bubbles refresh + one-time auto scroll =================== */
   const section = $('.pc-tab > section');

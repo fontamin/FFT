@@ -420,8 +420,8 @@ body.darkmode input.hidden:checked+label:hover {
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.status { cursor: default; }
-.right-side-header:hover {
+.right-side-header:hover,
+.status:hover {
   text-decoration: underline;
 }
 
@@ -1072,7 +1072,8 @@ footer {
   height: 85px;
 }
 
-.right-side-header {
+.right-side-header,
+.status {
   position: fixed;
   right: 12px;
   bottom: 92px;
@@ -1083,14 +1084,21 @@ footer {
   border-bottom: 1px solid black;
 }
 
-body.darkmode .right-side-header {
+body.darkmode .right-side-header,
+body.darkmode .status {
   background: #1e1e1e;
   border-bottom: 1px solid white;
 }
 
 @media (max-width: 600px) {
-  .right-side-header {
+  .right-side-header,
+  .status {
     right: 8px;
     bottom: 92px;
   }
+}
+
+.right-side-header:empty,
+.status:empty {
+  display: none;
 }
