@@ -1102,3 +1102,21 @@ body.darkmode .status {
 .status:empty {
   display: none;
 }
+
+/* ↻ all / × all: در عرض کم یا موبایل، دو دکمه به‌صورت یک ستون دو سطری */
+@media (max-width: 600px), (pointer: coarse) {
+  #fontbulk {
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;   /* هر دو دکمه هم‌عرض می‌شوند */
+    gap: 2px;
+    padding-inline-end: 6px;
+  }
+  #fontbulk .btn {
+    height: 18px;           /* 18 + 2 + 18 = 38px، داخل ردیف 40 پیکسلی فوتر جا می‌شود */
+    padding: 0 8px;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1;
+  }
+}
