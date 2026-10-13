@@ -107,6 +107,7 @@
     t1.textContent = `font-variation-settings: ${v || 'normal'};`;
     t2.textContent = `font-feature-settings: ${fset || 'normal'};`;
     t3.textContent = `font-size: ${fs}px; line-height: ${fh}em;`;
+    if (glyphOn) updateGlyphSize();
     scheduleGuides();
   }
 
@@ -280,7 +281,7 @@
   });
 
   /* =================== Font file parser (fvar / GSUB / GPOS / name) =================== */
-  const WANT = ['name', 'fvar', 'GSUB', 'GPOS', 'head', 'hhea', 'OS/2'];
+  const WANT = ['name', 'fvar', 'GSUB', 'GPOS', 'head', 'hhea', 'OS/2', 'cmap', 'maxp', 'post', 'CFF '];
   const W2TAGS = ['cmap','head','hhea','hmtx','maxp','name','OS/2','post','cvt ','fpgm','glyf','loca','prep',
     'CFF ','VORG','EBDT','EBLC','gasp','hdmx','kern','LTSH','PCLT','VDMX','vhea','vmtx','BASE','GDEF','GPOS',
     'GSUB','EBSC','JSTF','MATH','CBDT','CBLC','COLR','CPAL','SVG ','sbix','acnt','avar','bdat','bloc','bsln',
@@ -370,6 +371,199 @@
     return (s || '').replace(/^\s*version\s*/i, '').split(';')[0].trim();
   }
 
+  // every Unicode code point the font maps to a real glyph (cmap formats 4 and 12), without control / space / format characters
+  const SKIP_CH = /[\p{Cc}\p{Cs}\p{Z}\p{Cf}\p{Cn}]/u;
+  function cmapChars(d) {
+    const set = new Set(), n = d.getUint16(2), seen = new Set(), map = new Map();   // map: code point -> glyph id
+    const add = (c, g) => {
+      if (c <= 0x10FFFF && g) map.set(c, g);
+      if (c < 32 || (c > 126 && c < 160) || (c >= 0xD800 && c <= 0xDFFF) || c > 0x10FFFF || (c & 0xFFFE) === 0xFFFE) return;
+      set.add(c);
+    };
+    for (let i = 0; i < n; i++) {
+      const pid = d.getUint16(4 + i * 8), eid = d.getUint16(6 + i * 8), off = d.getUint32(8 + i * 8);
+      if (!(pid === 0 || (pid === 3 && (eid === 1 || eid === 10))) || seen.has(off)) continue;
+      seen.add(off);
+      const fmt = d.getUint16(off);
+      if (fmt === 4) {
+        const sc = d.getUint16(off + 6) / 2, endO = off + 14, stO = endO + sc * 2 + 2, dlO = stO + sc * 2, roO = dlO + sc * 2;
+        for (let k = 0; k < sc; k++) {
+          const end = d.getUint16(endO + k * 2), st = d.getUint16(stO + k * 2);
+          const delta = d.getInt16(dlO + k * 2), ro = d.getUint16(roO + k * 2);
+          for (let c = st; c <= end && c < 0xFFFF; c++) {
+            let g;
+            if (ro === 0) g = (c + delta) & 0xFFFF;
+            else {
+              const p = roO + k * 2 + ro + (c - st) * 2;
+              if (p + 2 > d.byteLength) break;
+              g = d.getUint16(p); if (g) g = (g + delta) & 0xFFFF;
+            }
+            if (g) add(c, g);
+          }
+        }
+      } else if (fmt === 12) {
+        const ng = d.getUint32(off + 12);
+        for (let g = 0; g < ng; g++) {
+          const o = off + 16 + g * 12, st = d.getUint32(o), end = Math.min(d.getUint32(o + 4), 0x10FFFF), gid = d.getUint32(o + 8);
+          for (let c = st; c <= end; c++) if (gid + (c - st)) add(c, gid + (c - st));
+        }
+      }
+    }
+    return { chars: [...set].sort((a, b) => a - b).filter(c => !SKIP_CH.test(String.fromCodePoint(c))), map };
+  }
+
+  // Glyphs that have no Unicode value are found through GSUB (single, alternate and ligature substitutions).
+  // Each one is described by a "recipe": a text + an OpenType feature that makes the browser draw exactly that glyph.
+  function gsubExtra(d, cmap, numGlyphs) {
+    const covered = new Set(cmap.values()), rev = new Map();
+    cmap.forEach((g, cp) => { if (!rev.has(g) || cp < rev.get(g)) rev.set(g, cp); });
+    const fl = d.getUint16(6), ll = d.getUint16(8), nf = d.getUint16(fl);
+    const POS = { init: 1, medi: 1, fina: 1, isol: 1 };   // Arabic joining forms: the context makes them appear
+    const reach = new Map(), subCache = {};
+    const cov = off => {
+      const f = d.getUint16(off), n = d.getUint16(off + 2), out = [];
+      if (f === 1) for (let i = 0; i < n; i++) out.push(d.getUint16(off + 4 + i * 2));
+      else for (let i = 0; i < n; i++) {
+        const o = off + 4 + i * 6, a = d.getUint16(o), b = d.getUint16(o + 2), si = d.getUint16(o + 4);
+        for (let g = a; g <= b; g++) out[si + g - a] = g;
+      }
+      return out;
+    };
+    const subsOf = i => {
+      if (subCache[i]) return subCache[i];
+      const lo = ll + d.getUint16(ll + 2 + i * 2), type = d.getUint16(lo), n = d.getUint16(lo + 4), out = [];
+      for (let k = 0; k < n; k++) {
+        let so = lo + d.getUint16(lo + 6 + k * 2), t = type;
+        if (type === 7) { t = d.getUint16(so + 2); so += d.getUint32(so + 4); }
+        out.push({ t, so });
+      }
+      return (subCache[i] = out);
+    };
+    const baseOf = g => rev.has(g) ? { s: String.fromCodePoint(rev.get(g)), f: {}, ctx: null } : (reach.get(g) || null);
+    const ok = g => g > 0 && !covered.has(g) && !reach.has(g) && (!numGlyphs || g < numGlyphs);
+    const make = (b, tag, v) => POS[tag] ? (b.ctx ? null : { s: b.s, f: b.f, ctx: tag })
+      : { s: b.s, f: Object.assign({}, b.f, { [tag]: v }), ctx: b.ctx };
+    const put = (g, b, tag, v) => { if (!ok(g) || !b) return; const r = make(b, tag, v); if (r) reach.set(g, r); };
+    for (let pass = 0; pass < 2; pass++) {
+      for (let fi = 0; fi < nf; fi++) {
+        const ro = fl + 2 + fi * 6, tag = tag4(d, ro), fo = fl + d.getUint16(ro + 4), nl = d.getUint16(fo + 2);
+        for (let li = 0; li < nl; li++) {
+          for (const { t, so } of subsOf(d.getUint16(fo + 4 + li * 2))) {
+            try {
+              if (t === 1) {
+                const f = d.getUint16(so), cv = cov(so + d.getUint16(so + 2));
+                if (f === 1) { const dl = d.getInt16(so + 4); cv.forEach(g => put((g + dl) & 0xFFFF, baseOf(g), tag, 1)); }
+                else { const n = d.getUint16(so + 4); for (let i = 0; i < n && i < cv.length; i++) put(d.getUint16(so + 6 + i * 2), baseOf(cv[i]), tag, 1); }
+              } else if (t === 3) {
+                const cv = cov(so + d.getUint16(so + 2)), n = d.getUint16(so + 4);
+                for (let i = 0; i < n; i++) {
+                  const st = so + d.getUint16(so + 6 + i * 2), cnt = d.getUint16(st), b = baseOf(cv[i]);
+                  for (let j = 0; j < cnt; j++) put(d.getUint16(st + 2 + j * 2), b, tag, j + 1);   // value = index of the alternate
+                }
+              } else if (t === 4 && pass === 0) {
+                const cv = cov(so + d.getUint16(so + 2)), n = d.getUint16(so + 4);
+                for (let i = 0; i < n; i++) {
+                  const st = so + d.getUint16(so + 6 + i * 2), lc = d.getUint16(st), first = rev.get(cv[i]);
+                  if (first == null) continue;
+                  for (let j = 0; j < lc; j++) {
+                    const lo2 = st + d.getUint16(st + 2 + j * 2), out = d.getUint16(lo2);
+                    if (!ok(out)) continue;
+                    const cc = d.getUint16(lo2 + 2);
+                    let str = String.fromCodePoint(first), good = true;
+                    for (let k = 0; k < cc - 1; k++) {
+                      const c = rev.get(d.getUint16(lo2 + 4 + k * 2));
+                      if (c == null) { good = false; break; }
+                      str += String.fromCodePoint(c);
+                    }
+                    if (good) put(out, { s: str, f: {}, ctx: null }, tag, 1);
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    }
+    const list = [...reach].sort((a, b) => a[0] - b[0]).slice(0, 4000).map(([g, r]) => ({ g, s: r.s, f: r.f, ctx: r.ctx }));
+    return { list, total: numGlyphs ? Math.max(list.length, numGlyphs - covered.size) : list.length };
+  }
+
+  // Standard Macintosh glyph order (used by 'post' tables)
+  const MAC = ('.notdef .null nonmarkingreturn space exclam quotedbl numbersign dollar percent ampersand quotesingle parenleft parenright asterisk plus comma hyphen period slash ' +
+    'zero one two three four five six seven eight nine colon semicolon less equal greater question at ' +
+    'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z bracketleft backslash bracketright asciicircum underscore grave ' +
+    'a b c d e f g h i j k l m n o p q r s t u v w x y z braceleft bar braceright asciitilde ' +
+    'Adieresis Aring Ccedilla Eacute Ntilde Odieresis Udieresis aacute agrave acircumflex adieresis atilde aring ccedilla eacute egrave ecircumflex edieresis iacute igrave icircumflex idieresis ntilde oacute ograve ocircumflex odieresis otilde uacute ugrave ucircumflex udieresis ' +
+    'dagger degree cent sterling section bullet paragraph germandbls registered copyright trademark acute dieresis notequal AE Oslash infinity plusminus lessequal greaterequal yen mu partialdiff summation product pi integral ordfeminine ordmasculine Omega ae oslash ' +
+    'questiondown exclamdown logicalnot radical florin approxequal Delta guillemotleft guillemotright ellipsis nonbreakingspace Agrave Atilde Otilde OE oe endash emdash quotedblleft quotedblright quoteleft quoteright divide lozenge ydieresis Ydieresis fraction currency guilsinglleft guilsinglright fi fl daggerdbl periodcentered quotesinglbase quotedblbase perthousand ' +
+    'Acircumflex Ecircumflex Aacute Edieresis Egrave Iacute Icircumflex Idieresis Igrave Oacute Ocircumflex apple Ograve Uacute Ucircumflex Ugrave dotlessi circumflex tilde macron breve dotaccent ring cedilla hungarumlaut ogonek caron Lslash lslash Scaron scaron Zcaron zcaron brokenbar Eth eth Yacute yacute Thorn thorn minus multiply onesuperior twosuperior threesuperior onehalf onequarter threequarters franc Gbreve gbreve Idotaccent Scedilla scedilla Cacute cacute Ccaron ccaron dcroat').split(' ');
+
+  // glyph names from the 'post' table (format 1 and 2); null when the font has none (format 3)
+  function postNames(d) {
+    const ver = d.getUint32(0), out = [];
+    if (ver === 0x00010000) { MAC.forEach((n, i) => { out[i] = n; }); return out; }
+    if (ver !== 0x00020000) return null;
+    const n = d.getUint16(32), idx = [], strs = [];
+    for (let i = 0; i < n; i++) idx.push(d.getUint16(34 + i * 2));
+    let p = 34 + n * 2;
+    while (p < d.byteLength) {
+      const l = d.getUint8(p++); let t = '';
+      for (let k = 0; k < l && p < d.byteLength; k++) t += String.fromCharCode(d.getUint8(p++));
+      strs.push(t);
+    }
+    idx.forEach((v, g) => { out[g] = v < 258 ? MAC[v] : (strs[v - 258] || ''); });
+    return out;
+  }
+
+  // glyph names from a CFF table (name-keyed fonts). Standard strings are only known for SID 1-95 (ASCII).
+  function cffNames(d) {
+    const index = p => {
+      const n = d.getUint16(p);
+      if (!n) return { it: [], end: p + 2 };
+      const os = d.getUint8(p + 2), base = p + 3 + (n + 1) * os - 1;
+      const off = i => { let v = 0; for (let k = 0; k < os; k++) v = v * 256 + d.getUint8(p + 3 + i * os + k); return v; };
+      const it = [];
+      for (let i = 0; i < n; i++) it.push([base + off(i), base + off(i + 1)]);
+      return { it, end: base + off(n) };
+    };
+    const nm = index(d.getUint8(2)), top = index(nm.end), st = index(top.end);
+    const dict = {}; let stack = [], p = top.it[0][0];
+    const e = top.it[0][1];
+    while (p < e) {
+      const b = d.getUint8(p++);
+      if (b <= 21) { dict[b === 12 ? 1200 + d.getUint8(p++) : b] = stack; stack = []; }
+      else if (b === 28) { stack.push(d.getInt16(p)); p += 2; }
+      else if (b === 29) { stack.push(d.getInt32(p)); p += 4; }
+      else if (b === 30) { while (p < e) { const v = d.getUint8(p++); if ((v & 15) === 15 || (v >> 4) === 15) break; } stack.push(0); }
+      else if (b >= 32 && b <= 246) stack.push(b - 139);
+      else if (b >= 247 && b <= 250) stack.push((b - 247) * 256 + d.getUint8(p++) + 108);
+      else if (b >= 251 && b <= 254) stack.push(-(b - 251) * 256 - d.getUint8(p++) - 108);
+    }
+    if (dict[1230] || !dict[17]) return null;   // CID-keyed fonts have no glyph names
+    const ng = d.getUint16(dict[17][0]), co = dict[15] ? dict[15][0] : 0, sids = [0];
+    if (co <= 2) { for (let g = 1; g < ng; g++) sids[g] = g; }
+    else {
+      const f = d.getUint8(co); let q = co + 1;
+      if (f === 0) { for (let g = 1; g < ng; g++) { sids[g] = d.getUint16(q); q += 2; } }
+      else {
+        let g = 1;
+        while (g < ng) {
+          const first = d.getUint16(q); q += 2;
+          let left; if (f === 1) left = d.getUint8(q++); else { left = d.getUint16(q); q += 2; }
+          for (let k = 0; k <= left && g < ng; k++) sids[g++] = first + k;
+        }
+      }
+    }
+    const nameOf = sid => {
+      if (sid === 0) return '.notdef';
+      if (sid < 391) return sid <= 95 ? (sid === 8 ? 'quoteright' : sid === 65 ? 'quoteleft' : MAC[sid + 2]) : '';
+      const it = st.it[sid - 391]; if (!it) return '';
+      let t = ''; for (let i = it[0]; i < it[1]; i++) t += String.fromCharCode(d.getUint8(i));
+      return t;
+    };
+    return sids.map(nameOf);
+  }
+
   async function parseFont(buf) {
     const T = await readTables(buf);
     const out = { name: '', version: '', axes: [], features: [] };
@@ -395,6 +589,16 @@
     const set = new Set();
     ['GSUB', 'GPOS'].forEach(t => { try { if (T[t]) featureTags(T[t]).forEach(x => set.add(x)); } catch (e) {} });
     out.features = [...set].sort();
+    if (T.cmap) {
+      try {
+        const cm = cmapChars(T.cmap);
+        out.chars = cm.chars;
+        out.gids = Uint16Array.from(cm.chars, c => cm.map.get(c));
+        out.bases = [0x25CC, 0x640, 0xA0, 0x20, 0x627].filter(c => cm.map.has(c));
+        if (T.GSUB) out.extra = gsubExtra(T.GSUB, cm.map, T.maxp ? T.maxp.getUint16(4) : 0);
+      } catch (e) {}
+    }
+    try { out.names = (T.post && postNames(T.post)) || (T['CFF '] && cffNames(T['CFF '])) || null; } catch (e) {}
     // metrics stored in the file (font units), used when the glyphs can't be measured
     try {
       const tab = {};
@@ -448,6 +652,7 @@
     setInfo(rec.info);
     setStatus(rec.status);
     renderList();
+    if (glyphOn) renderGlyphs();
   }
 
   function removeFont(rec) {
@@ -465,6 +670,7 @@
     setInfo({ axes: [], features: [] });
     setStatus('');
     renderList();
+    if (glyphOn) renderGlyphs();
   }
 
   /* =================== Font loading =================== */
@@ -536,7 +742,7 @@
       family, css: `"${family}", sans-serif`, face, file: fileName, name, version,
       metrics: measureMetrics(`"${family}"`, parsed && parsed.tab),
       info: parsed
-        ? { axes: parsed.axes, features: parsed.features }
+        ? { axes: parsed.axes, features: parsed.features, chars: parsed.chars, extra: parsed.extra, bases: parsed.bases, gids: parsed.gids, names: parsed.names }
         : { generic: true, axes: [], features: COMMON },
       status: parsed
         ? `${name}${version ? ' v' + version : ''}: ${parsed.axes.length} axes, ${parsed.features.length} features`
@@ -811,20 +1017,249 @@
   const wikiBox = document.createElement('div');
   wikiBox.id = 'Wiki'; wikiBox.className = 'tabcontent'; wikiBox.style.display = 'none';
   testBox.after(wikiBox);
+  const glyphBox = document.createElement('div');
+  glyphBox.id = 'Glyphs'; glyphBox.className = 'tabcontent'; glyphBox.style.display = 'none';
+  wikiBox.after(glyphBox);
 
-  let viewWiki = false;   // which box is on screen
-  let wikiOn = false;     // Wiki button in the Test tab (on = Wikipedia menu + article, off = tests)
-  const wikiToggle = $('#wikitoggle');
-  function setWikiMode(on) {
-    wikiOn = on; viewWiki = on;
-    tab6El.classList.toggle('wikimode', on);
-    wikiToggle.classList.toggle('on', on);
+  let viewWiki = false, viewGlyph = false;   // which box is on screen
+  let wikiOn = false, glyphOn = false;       // Wiki / Whole characters buttons in the Test tab (never both on)
+  const wikiToggle = $('#wikitoggle'), glyphToggle = $('#glyphtoggle');
+  function setMode(m) {
+    wikiOn = viewWiki = m === 'wiki';
+    glyphOn = viewGlyph = m === 'glyph';
+    tab6El.classList.toggle('wikimode', wikiOn);
+    tab6El.classList.toggle('glyphmode', glyphOn);
+    wikiToggle.classList.toggle('on', wikiOn);
+    glyphToggle.classList.toggle('on', glyphOn);
+    if (glyphOn) renderGlyphs();
     syncView();
   }
+  const setWikiMode = on => setMode(on ? 'wiki' : 'test');
   wikiToggle.addEventListener('click', () => { setWikiMode(!wikiOn); updateAbout(); });
+  glyphToggle.addEventListener('click', () => { setMode(glyphOn ? 'test' : 'glyph'); updateAbout(); });
+  // captions under each glyph: Unicode value / glyph name (remembered)
+  const capUni = $('#gshowuni'), capName = $('#gshownames'), CAP_KEY = 'fft-gcaps';
+  try { const j = JSON.parse(localStorage.getItem(CAP_KEY)); if (j) { capUni.checked = !!j.u; capName.checked = !!j.n; } } catch (e) {}
+  const syncCaps = () => {
+    glyphBox.classList.toggle('cap-u', capUni.checked);
+    glyphBox.classList.toggle('cap-n', capName.checked);
+    try { localStorage.setItem(CAP_KEY, JSON.stringify({ u: capUni.checked, n: capName.checked })); } catch (e) {}
+  };
+  [capUni, capName].forEach(el => el.addEventListener('change', () => { syncCaps(); updateGlyphSize(); }));
+  syncCaps();
+  $('#glyphcopy').addEventListener('click', () => {
+    const ch = active && active.info && active.info.chars;
+    if (ch && ch.length) { copyText(ch.map(c => String.fromCodePoint(c)).join('')); flash('Copied'); }
+  });
   function syncView() {
-    testBox.style.display = viewWiki ? 'none' : 'block';
+    testBox.style.display = (viewWiki || viewGlyph) ? 'none' : 'block';
     wikiBox.style.display = viewWiki ? 'block' : 'none';
+    glyphBox.style.display = viewGlyph ? 'block' : 'none';
+    if (viewGlyph) updateGlyphSize();
+    scheduleGuides();
+  }
+
+  // "Whole characters": every character of the active font (from its cmap), shown in batches
+  const GLYPH_STEP = 2500, GAP = 6, FILL = 0.9;
+  // the text shown in a cell: combining marks get a dotted circle to sit on
+  // The base character is taken from the font itself: if the font has no dotted circle (◌), the mark would be
+  // drawn after a fallback-font base and the browser would also take the mark from that other font.
+  function withBase(str) {
+    if (!/^\p{M}/u.test(str)) return str;
+    const arab = /^\p{scx=Arabic}/u.test(str);
+    const have = active && active.info && active.info.bases;
+    const order = arab ? [0x25CC, 0x640, 0xA0, 0x20, 0x627] : [0x25CC, 0xA0, 0x20];   // dotted circle, tatweel, no-break space, space, alef
+    const cp = have ? order.find(c => have.includes(c)) : 0x25CC;
+    return cp ? String.fromCodePoint(cp) + str : str;
+  }
+  const shownStr = cp => withBase(String.fromCodePoint(cp));
+  const recipeStr = r => {
+    const t = withBase(r.s);
+    return r.ctx === 'init' ? t + '\u200D' : r.ctx === 'medi' ? '\u200D' + t + '\u200D' : r.ctx === 'fina' ? '\u200D' + t : t;
+  };
+  const recipeCss = r => Object.keys(r.f).map(t => '"' + t + '" ' + r.f[t]).join(', ');
+
+  // Ink extents of every character (em units, measured on a canvas at 100px) and the reference extents:
+  // a high percentile, so a few huge glyphs (like ﷽) don't shrink all the others. Bigger glyphs take several cells.
+  function glyphExtents(chars) {
+    const g = active.gext;
+    if (g && g.family === active.family && g.n === chars.length) return g;
+    const cx = glyphExtents.cx || (glyphExtents.cx = document.createElement('canvas').getContext('2d'));
+    cx.font = '100px ' + active.css;
+    const n = chars.length, half = new Float32Array(n), asc = new Float32Array(n), desc = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const m = cx.measureText(shownStr(chars[i]));
+      half[i] = Math.max(0, m.actualBoundingBoxLeft + m.width / 2, m.actualBoundingBoxRight - m.width / 2) / 100;
+      asc[i] = Math.max(0, m.actualBoundingBoxAscent) / 100;
+      desc[i] = Math.max(0, m.actualBoundingBoxDescent) / 100;
+    }
+    const pct = (a, p, pos) => { const b = (pos ? a.filter(x => x > 0) : a).slice().sort(); return b.length ? b[Math.min(b.length - 1, Math.floor(b.length * p))] : 0; };
+    const ref = { half: pct(half, .95, true) || .5, asc: pct(asc, .98, true) || .5, desc: pct(desc, .98, false) };
+    return (active.gext = { family: active.family, n, half, asc, desc, ref });
+  }
+
+  // half-widths (em) of the glyphs without Unicode, measured in the DOM because canvas can't apply OpenType features
+  function extraHalves(list) {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;white-space:nowrap;font-size:100px;line-height:1;font-family:' + active.css;
+    list.forEach(r => {
+      const sp = document.createElement('span');
+      sp.style.cssText = 'display:inline-block;font-feature-settings:' + (recipeCss(r) || 'normal');
+      sp.textContent = recipeStr(r);
+      box.appendChild(sp);
+    });
+    document.body.appendChild(box);
+    const w = [...box.children].map(sp => sp.getBoundingClientRect().width / 200);
+    box.remove();
+    return Float32Array.from(w);
+  }
+
+  // where the browser puts the baseline inside a line box (r = top -> baseline, h = content height; both in em)
+  const probeCache = {};
+  function probeFont(ff) {
+    if (probeCache[ff]) return probeCache[ff];
+    const d = document.createElement('div');
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:1000px;line-height:normal;font-family:' + ff;
+    d.innerHTML = '<span>x</span><span style="display:inline-block;width:0;height:0"></span>';
+    document.body.appendChild(d);
+    const a = d.firstChild.getBoundingClientRect(), b = d.lastChild.getBoundingClientRect();
+    d.remove();
+    return (probeCache[ff] = { r: (b.bottom - a.top) / 1000, h: a.height / 1000 });
+  }
+
+  // One glyph size for the whole table: the largest at which a typical (reference) glyph fits in one cell.
+  // Glyphs that are wider (or taller) than that take as many cells as they need, so nothing is clipped and
+  // one huge glyph doesn't shrink the rest. The Size slider only changes the cell width.
+  function updateGlyphSize() {
+    const grid = glyphBox.querySelector('.glyphgrid');
+    if (!grid || !grid.__ext) return;
+    const capU = capUni.checked, capN = capName.checked, lines = (capU ? 1 : 0) + (capN ? 1 : 0);
+    const capH = lines ? lines * 13 + 7 : 0;   // caption strip at the bottom of each cell
+    $$('.glyphgrid', glyphBox).forEach(g => g.style.setProperty('--minc', capN ? '84px' : capU ? '64px' : '0px'));
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
+    const cw = parseFloat(cols[0]), nc = cols.length;
+    if (!cw) return;   // box not on screen
+    const R = grid.__ext.ref, RH = cw + capH;
+    const S = Math.max(1, Math.min(FILL * cw / (2 * R.half), FILL * cw / (R.asc + R.desc)));
+    const p = probeFont(target.style.fontFamily || 'sans-serif');
+    const k = 0.5 + p.r - p.h / 2;                                       // baseline inside a 1em line box
+    const ybRef = (cw - (R.asc + R.desc) * S) / 2 + R.asc * S;           // common baseline, from the top of a cell
+    $$('.glyphgrid', glyphBox).forEach(g => {
+      g.style.gridAutoRows = RH + 'px';
+      g.style.setProperty('--caph', capH + 'px');
+      g.style.setProperty('--gs', S.toFixed(2) + 'px');
+      g.style.setProperty('--gt', (ybRef - k * S).toFixed(2) + 'px');
+      const x = g.__ext, cells = g.children;
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        const need = 2 * x.half[i] * S;
+        let n = 1;
+        while (n < nc && need > FILL * (n * cw + (n - 1) * GAP)) n++;
+        const own = x.asc[i] > R.asc || x.desc[i] > R.desc;              // taller than the reference: own baseline
+        let r = 1;
+        if (own) { const nh = (x.asc[i] + x.desc[i]) * S; while (r < 8 && nh > FILL * (r * RH + (r - 1) * GAP - capH)) r++; }
+        const H = r * RH + (r - 1) * GAP - capH;   // height of the glyph area (without the caption)
+        const gt = own ? ((H - (x.asc[i] + x.desc[i]) * S) / 2 + x.asc[i] * S - k * S).toFixed(1) : '';
+        const key = n + ',' + r + ',' + gt;
+        if (c.__k !== key) {
+          c.__k = key;
+          c.style.gridColumn = n > 1 ? 'span ' + n : '';
+          c.style.gridRow = r > 1 ? 'span ' + r : '';
+          if (gt) c.style.setProperty('--gt', gt + 'px'); else c.style.removeProperty('--gt');
+        }
+      }
+    });
+  }
+
+  // caption strip of a cell: Unicode value and glyph name (which lines are visible depends on the two checkboxes)
+  function mkCap(uni, gid, names) {
+    const c = document.createElement('div'), u = document.createElement('div'), n = document.createElement('div');
+    c.className = 'cap'; u.className = 'cu'; n.className = 'cn';
+    u.textContent = uni;
+    const nm = names && names[gid];
+    n.textContent = nm || '#' + gid;
+    if (!nm) n.classList.add('dim');   // the font has no name for this glyph: its number is shown instead
+    c.append(u, n);
+    return c;
+  }
+
+  function renderGlyphs() {
+    glyphBox.textContent = '';
+    const info = active && active.info, chars = info && info.chars, ex = info && info.extra, names = info && info.names;
+    const mkLab = () => { const l = document.createElement('p'); l.className = 'sizelabel'; l.dir = 'ltr'; return l; };
+    const lab = mkLab();
+    glyphBox.appendChild(lab);
+    if (!chars || !chars.length) {
+      lab.textContent = 'No character list: the fallback font, and fonts whose tables can\'t be read, have none';
+      return;
+    }
+    lab.textContent = titleOf(active) + ' — ' + chars.length + ' characters' +
+      (ex && ex.total ? ' + ' + ex.total + ' glyphs without a Unicode value' : '') + ' (click one to copy it)';
+    const grid = document.createElement('div');
+    grid.className = 'glyphgrid'; grid.dir = 'ltr';
+    grid.__ext = glyphExtents(chars);
+    const more = document.createElement('button');
+    more.type = 'button'; more.className = 'btn outline glyphmore';
+    let shown = 0;
+    const add = () => {
+      const end = Math.min(chars.length, shown + GLYPH_STEP), frag = document.createDocumentFragment();
+      for (; shown < end; shown++) {
+        const cp = chars[shown];
+        const d = document.createElement('div');
+        d.className = 'glyph'; d.dataset.cp = cp;
+        const hex = 'U+' + cp.toString(16).toUpperCase().padStart(4, '0');
+        const gid = info.gids ? info.gids[shown] : 0;
+        d.title = hex + (names && names[gid] ? ' — ' + names[gid] : '') + (gid ? ' (glyph #' + gid + ')' : '');
+        const sp = document.createElement('span');   // size and position come from updateGlyphSize
+        sp.textContent = shownStr(cp);
+        d.appendChild(sp);
+        d.appendChild(mkCap(hex, gid, names));
+        frag.appendChild(d);
+      }
+      grid.appendChild(frag);
+      more.hidden = shown >= chars.length;
+      more.textContent = 'Show more (' + (chars.length - shown) + ' left)';
+      updateGlyphSize();
+    };
+    grid.addEventListener('click', e => {
+      const c = e.target.closest('.glyph');
+      if (c) { copyText(String.fromCodePoint(+c.dataset.cp)); flash('Copied'); }
+    });
+    more.addEventListener('click', add);
+    glyphBox.append(grid, more);
+    add();
+
+    // glyphs without a Unicode value (alternates, ligatures, joining forms…)
+    if (ex && ex.total) {
+      const list = ex.list, lab2 = mkLab();
+      const miss = Math.max(0, ex.total - list.length);
+      lab2.textContent = 'Glyphs without a Unicode value: ' + list.length + ' shown' +
+        (miss ? ', ' + miss + ' can\'t be drawn from text (only used inside contextual rules, as components, or unused)' : '') +
+        (list.length ? ' (click one to copy its text)' : '');
+      glyphBox.appendChild(lab2);
+      if (list.length) {
+        const g2 = document.createElement('div');
+        g2.className = 'glyphgrid'; g2.dir = 'ltr';
+        g2.__ext = { half: extraHalves(list), asc: new Float32Array(list.length), desc: new Float32Array(list.length), ref: grid.__ext.ref };
+        list.forEach(r => {
+          const d = document.createElement('div');
+          d.className = 'glyph'; d.__txt = recipeStr(r);
+          d.title = 'glyph #' + r.g + ' — ' + (r.ctx ? 'joining form: ' + r.ctx : 'feature: ' + recipeCss(r));
+          const sp = document.createElement('span');
+          sp.style.fontFeatureSettings = recipeCss(r) || 'normal';
+          sp.textContent = d.__txt;
+          d.appendChild(sp);
+          d.appendChild(mkCap('—', r.g, names));
+          g2.appendChild(d);
+        });
+        g2.addEventListener('click', e => {
+          const c = e.target.closest('.glyph');
+          if (c) { copyText(c.__txt); flash('Copied'); }
+        });
+        glyphBox.appendChild(g2);
+      }
+    }
+    updateGlyphSize();
   }
 
   function setBoxText(p, text) {
@@ -924,7 +1359,7 @@
   });
   // redraw when the text, the layout or the font changes
   new MutationObserver(scheduleGuides).observe(target, { childList: true, subtree: true, characterData: true });
-  if (window.ResizeObserver) new ResizeObserver(scheduleGuides).observe(target);
+  if (window.ResizeObserver) new ResizeObserver(() => { scheduleGuides(); if (viewGlyph) updateGlyphSize(); }).observe(target);
   window.addEventListener('resize', scheduleGuides);
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', scheduleGuides);
 
@@ -1614,7 +2049,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
 
   function updateAbout() {
     const wm = wikiMode();
-    const has = wm ? !!wikiInfo : !!(activeTest && (activeTest.about || activeTest.author || activeTest.link));
+    const has = viewGlyph ? !!(active && active.info && active.info.chars) : wm ? !!wikiInfo : !!(activeTest && (activeTest.about || activeTest.author || activeTest.link));
     aboutBtn.classList.toggle('off', !has);
     if (aboutPop.classList.contains('open')) fillAbout();
   }
@@ -1622,6 +2057,20 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   function fillAbout() {
     aboutPop.textContent = '';
     aboutPop.classList.remove('empty');
+    if (viewGlyph) {
+      const ch = active && active.info && active.info.chars;
+      if (ch) {
+        const b = document.createElement('b');
+        b.textContent = titleOf(active); b.dir = 'auto';
+        const d = document.createElement('div');
+        d.textContent = ch.length + ' characters from the font\'s cmap table, plus the glyphs without a Unicode value that can be reached through GSUB features (alternates, ligatures, joining forms).';
+        aboutPop.append(b, d);
+      } else {
+        aboutPop.textContent = 'No character list for this font';
+        aboutPop.classList.add('empty');
+      }
+      return;
+    }
     if (wikiMode()) {
       if (wikiInfo) {
         const b = document.createElement('b');
@@ -1704,7 +2153,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     const cur = wikiLangIn.value.trim().toLowerCase();
     WIKI_LANGS.forEach(([code, label]) => {
       const chip = document.createElement('span');
-      chip.className = 'chip' + (code === cur ? ' active' : '');
+      chip.className = 'chip outline' + (code === cur ? ' active' : '');
       const nb = document.createElement('button');
       nb.type = 'button'; nb.className = 'chipname nox';
       nb.textContent = label; nb.title = code;
@@ -1832,7 +2281,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       section.scrollLeft = 0;
       if (!tab.checked) return;
       // Test tab -> test text, or the article when the Wiki button is on. Other tabs keep whatever is on screen.
-      if (id === 'tab6') { viewWiki = wikiOn; syncView(); }
+      if (id === 'tab6') { viewWiki = wikiOn; viewGlyph = glyphOn; syncView(); }
       updateAbout();
       requestAnimationFrame(updateBubbles);
       if (id === 'tab5') requestAnimationFrame(renderList);

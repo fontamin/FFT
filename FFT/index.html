@@ -7,8 +7,8 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Fontamin Font Tester</title>
-      <link rel="stylesheet" href="style.css?v=1.1">
-      <script src="script.js?v=1.1" defer></script>
+      <link rel="stylesheet" href="style.css?v=1.3">
+      <script src="script.js?v=1.3" defer></script>
    </head>
    <body spellcheck="false">
       <script>try{if(localStorage.getItem("fft-dark")==="1")document.body.classList.add("darkmode")}catch(e){}</script>
@@ -84,7 +84,7 @@
                <div class="tab4">
                   <div style="direction:ltr;text-align:center;">
                      <a href="https://fontamin.com/" target="_blank"><svg class="fontamin-logo" viewBox="0 0 35.166 35.957" role="img" aria-label="Fontamin"><g transform="matrix(0.1808294,0,0,0.1808294,-41.132058,-16.305489)" fill="none"><g transform="matrix(5.4557778,0,0,5.4557778,228.76969,91.506299)" fill="none" stroke="currentColor" stroke-width="1.45488"><path d="m 27.879766,22.664017 c -3.617537,0.442468 -7.048319,0.531094 -10.501202,0.534409 -3.638092,0 -6.705308,-0.218802 -8.643148,-0.888471 C 6.979691,21.702833 6.391134,20.560196 6.413014,18.826572 6.437324,16.8642 6.716023,15.750958 7.185896,14.04275 L 1.013229,12.867846 C 1.119315,9.102672 2.120061,6.0118074 4.33262,4.1818214 6.665853,2.2517166 10.433678,1.205442 15.989941,1.3113071 c 0.957428,0 1.94005,0.061884 3.412437,0.1989116 l 0.320027,0.828798 c -3.004227,2.7739317 -4.826478,7.7869433 -4.826478,12.8631663 0,2.561097 0.564025,4.55861 1.88303,5.918723 1.319224,1.360333 3.301709,1.96613 5.821918,1.96613"/><path d="m 26.550816,1.6264714 c 5.366854,3.1184906 7.68373,8.1891876 7.68373,17.0204166 0,6.391912 -1.233692,10.306932 -3.945519,12.678179 -2.711827,2.371025 -7.118601,3.328011 -13.726884,3.328011 -4.721939,0 -8.677626,-0.806255 -11.378844,-2.615908 C 2.48208,30.227738 0.931454,27.463531 0.931454,23.110463"/></g><path d="m 354.8169,172.22339 c -7.07566,0 -11.16632,-3.82229 -11.16632,-9.70471 0,-9.74509 5.09183,-16.28121 13.32217,-16.28121 9.62156,0 14.92291,8.70534 16.78924,24.01638 -6.0792,1.30593 -11.49491,1.96954 -18.94509,1.96954 z" fill="none" stroke="currentColor" stroke-width="7.9375" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4"/></g></svg></a>
-                     FFT(Fontamin Font Tester) - v1.0<br>
+                     FFT(Fontamin Font Tester) - v1.1<br>
                      Loaded fonts are not saved. Refresh clears them.
                   </div>
                </div>
@@ -101,7 +101,9 @@
                   <p class="status" id="fontstatus"></p>
                </div>
                <div class="tab6">
-                  <button type="button" id="wikitoggle" class="btn" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki</button>
+                  <button type="button" id="wikitoggle" class="btn outline" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki</button>
+                  <button type="button" id="glyphtoggle" class="btn outline" title="Show every character the font has (read from its cmap table) + glyphs without unicode values from OpenType substitution tables">Glyph List</button>
+                  <div id="glyphgroup"><input class="hidden" type="checkbox" id="gshowuni" autocomplete="off"><label class="outline" for="gshowuni" title="Show the Unicode value under each glyph">Unicode Values</label><input class="hidden" type="checkbox" id="gshownames" autocomplete="off"><label class="outline" for="gshownames" title="Show the glyph name under each glyph (a #number if the font has no names)">Names</label><button type="button" id="glyphcopy" class="btn outline" title="Copy all characters of this font">Copy all</button></div>
                   <div id="testgroup">
                      <div id="testlist"></div>
                      <button type="button" id="testadd" class="btn" title="Save the text currently on screen as a new test">+</button>
@@ -110,7 +112,7 @@
                   <div id="wikigroup">
                      <div id="wikilangs"></div>
                      <input type="text" id="wikilang" maxlength="12" placeholder="lang" autocomplete="off" autocapitalize="off" spellcheck="false" title="Wikipedia language code (fa, ar, en, de, …)">
-                     <button type="button" id="wikibtn" class="btn" title="Fetch a long random Wikipedia article in this language">Fetch article</button>
+                     <button type="button" id="wikibtn" class="btn outline" title="Fetch a long random Wikipedia article in this language">Fetch article</button>
                      <p class="status" id="wikistatus"></p>
                   </div>
                </div>
@@ -120,11 +122,11 @@
                   <li class="tab5">
                      <label for="tab5">Font</label>
                   </li>
-                  <li class="tab6">
-                     <label for="tab6">Test</label>
-                  </li>
                   <li class="tab1">
                      <label for="tab1">Layout</label>
+                  </li>
+                  <li class="tab6">
+                     <label for="tab6">Test</label>
                   </li>
 
                   <li class="tab2">

@@ -698,8 +698,8 @@ body.darkmode .btn:hover { background: #282828; }
 /* Auto-reload toggle (fixed, next to the dark-mode button) */
 #autobtn {
   position: fixed;
-  left: 60px;
-  bottom: 95px;
+  left: 14px;
+  bottom: 138px;
   z-index: 90;
   width: 38px;
   height: 38px;
@@ -1120,3 +1120,131 @@ body.darkmode .status {
     line-height: 1;
   }
 }
+
+/* =================== Test tab: Whole characters mode =================== */
+.tab6.glyphmode #testgroup { display: none; }
+.tab6.wikimode #glyphtoggle { display: none; }
+.tab6.glyphmode #wikitoggle { display: none; }
+#glyphgroup { display: contents; }
+.tab6:not(.glyphmode) #glyphgroup { display: none; }
+
+/* =================== Outline style (stroke, no fill) for Wiki and Whole characters =================== */
+.btn.outline,
+.chip.outline {
+  background: transparent !important;
+  border: 1.5px solid var(--accent);
+  color: #222;
+}
+body.darkmode .btn.outline,
+body.darkmode .chip.outline { color: #ddd; }
+.btn.outline:hover,
+.chip.outline:hover,
+body.darkmode .btn.outline:hover,
+body.darkmode .chip.outline:hover,
+.btn.outline.on,
+.chip.outline.active,
+body.darkmode .btn.outline.on,
+body.darkmode .chip.outline.active {
+  color: var(--accent);
+}
+
+/* the Wiki article and the glyph table sit in a stroked frame with no fill */
+#Wiki {
+  background: #f0f0f0;
+  border-radius: 18px;
+  padding: 6px 14px;
+}
+body.darkmode #Wiki { background: #2e2e2e; }
+#Glyphs { padding: 6px 0; }
+
+.glyphgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.2em, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+  direction: ltr;
+}
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  line-height: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+body.darkmode .glyph { background: #2e2e2e; }
+.glyph:hover { color: var(--accent); }
+.glyphmore { display: block; margin: 14px auto; }
+.glyphmore[hidden] { display: none; }
+
+#aboutpop { border: none; background: #f0f0f0; }
+body.darkmode #aboutpop { border: none; background: #2e2e2e; }
+
+/* glyph size follows the cell width, not the slider: always the largest size the cell allows.
+   The slider only decides how wide the cells (and so how many columns) are. */
+/* glyph size/position come from JS (--gs, --gt on the grid): never clipped, the cell only frames the glyph */
+.glyph { display: block; position: relative; overflow: visible; container-type: normal; }
+.glyph > span {
+  position: absolute;
+  left: 50%;
+  top: var(--gt, 0);
+  transform: translateX(-50%);
+  font-size: var(--gs, 1em);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* wide glyphs span several cells; rows have a fixed height (set from JS) so a cell is no longer forced square */
+.glyphgrid { grid-auto-flow: row dense; }
+.glyph { aspect-ratio: auto; }
+
+/* =================== Whole characters: captions (Unicode value / name) =================== */
+.glyphgrid { grid-template-columns: repeat(auto-fill, minmax(max(2.2em, var(--minc, 0px)), 1fr)); }
+/* the caption is a darker strip at the bottom of its own cell, so it can't be mistaken for the cell below */
+.glyph .cap {
+  display: none;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--caph, 0px);
+  padding-top: 3px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .07);
+  border-radius: 0 0 8px 8px;
+  color: #555;
+  font: 10px/13px monospace;
+  font-variation-settings: normal;
+  font-feature-settings: normal;
+  letter-spacing: 0;
+  text-align: center;
+  direction: ltr;
+  -webkit-text-stroke: 0;
+  -webkit-text-fill-color: currentColor;
+}
+.glyph .cap > div { display: none; height: 13px; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#Glyphs.cap-u .cap, #Glyphs.cap-n .cap { display: block; }
+#Glyphs.cap-u .cap .cu, #Glyphs.cap-n .cap .cn { display: block; }
+.glyph .cap .dim { opacity: .55; font-style: italic; }
+body.darkmode .glyph .cap { background: rgba(255, 255, 255, .08); color: #aaa; }
+
+/* the two caption checkboxes: same stroke-only look as the other Whole characters controls */
+input.hidden + label.outline {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--accent);
+  background: transparent !important;
+  color: #222;
+  font: 12px monospace;
+}
+body.darkmode input.hidden + label.outline { color: #ddd; }
+input.hidden:checked + label.outline,
+input.hidden + label.outline:hover,
+input.hidden:checked + label.outline:hover { color: var(--accent) !important; }
