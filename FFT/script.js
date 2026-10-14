@@ -1129,7 +1129,7 @@
 
   // One glyph size for the whole table: the largest at which a typical (reference) glyph fits in one cell.
   // Glyphs that are wider (or taller) than that take as many cells as they need, so nothing is clipped and
-  // one huge glyph doesn't shrink the rest. The Size slider only changes the cell width.
+  // one huge glyph doesn't shrink the rest. The Size slider only changes the cell width; the Height slider changes the row height.
   function updateGlyphSize() {
     const grid = glyphBox.querySelector('.glyphgrid');
     if (!grid || !grid.__ext) return;
@@ -1139,11 +1139,13 @@
     const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
     const cw = parseFloat(cols[0]), nc = cols.length;
     if (!cw) return;   // box not on screen
-    const R = grid.__ext.ref, RH = cw + capH;
+    const R = grid.__ext.ref;
     const S = Math.max(1, Math.min(FILL * cw / (2 * R.half), FILL * cw / (R.asc + R.desc)));
+    // the Height slider (line-height, in em of the glyph size) sets the height of every row: HA = glyph area, RH = row (+ caption)
+    const HA = S * (+heightIn.value || 1.5), RH = HA + capH;
     const p = probeFont(target.style.fontFamily || 'sans-serif');
     const k = 0.5 + p.r - p.h / 2;                                       // baseline inside a 1em line box
-    const ybRef = (cw - (R.asc + R.desc) * S) / 2 + R.asc * S;           // common baseline, from the top of a cell
+    const ybRef = (HA - (R.asc + R.desc) * S) / 2 + R.asc * S;           // common baseline, from the top of a cell
     $$('.glyphgrid', glyphBox).forEach(g => {
       g.style.gridAutoRows = RH + 'px';
       g.style.setProperty('--caph', capH + 'px');
@@ -1169,6 +1171,7 @@
         }
       }
     });
+    scheduleGuides();   // glyph size/position are set via styles, so redraw the guides afterwards
   }
 
   // caption strip of a cell: Unicode value and glyph name (which lines are visible depends on the two checkboxes)
@@ -1308,7 +1311,7 @@
   function drawGuides() {
     if (!guidesOn) return;
     const m = active && active.metrics;
-    const box = [testBox, wikiBox].find(b => b.style.display !== 'none');
+    const box = [testBox, wikiBox, glyphBox].find(b => b.style.display !== 'none');
     if (!m || !box) { clearGuides(); return; }
     const dyn = target.getBoundingClientRect();
     const styles = new Map();
@@ -1334,8 +1337,11 @@
         const g = lines.get(k);
         if (g) { g.l = Math.min(g.l, r.left); g.r = Math.max(g.r, r.right); } else lines.set(k, { t: r.top, l: r.left, r: r.right });
       }
+      const cell = n.parentElement.closest('.glyph');
+      const cr = cell ? cell.getBoundingClientRect() : null;   // Glyph List: lines span the whole cell
       for (const g of lines.values()) {
-        const yb = g.t - dyn.top + ratio * cs.fs, x1 = g.l - dyn.left, x2 = g.r - dyn.left;
+        const yb = g.t - dyn.top + ratio * cs.fs;
+        const x1 = (cr ? cr.left : g.l) - dyn.left, x2 = (cr ? cr.right : g.r) - dyn.left;
         if (m.asc)  solid += line(x1, x2, yb - m.asc * cs.fs);
         if (m.desc) solid += line(x1, x2, yb + m.desc * cs.fs);
         if (m.xh)   dash  += line(x1, x2, yb - m.xh * cs.fs);
