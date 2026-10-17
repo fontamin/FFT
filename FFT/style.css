@@ -1,6 +1,38 @@
-:root {
+/* =================== Colors ===================
+   Every customizable color is a CSS variable. The values below are the built-in defaults (light / dark);
+   script.js (Layout tab, color presets) sets all of them on <body> as inline styles, which win over these rules. */
+body {
   --accent: #ff4242;
   --accent-bg: #ff424222;
+  --on-accent: #fff;
+  --selection: #ff8080;
+  --bg: #f6f6f6;
+  --text: #222;
+  --footer: #fff;
+  --footer-fg: #222;
+  --nav-fg: #2226;
+  --line: #aaa;
+  --track: #ccc;
+  --chip: #ececee;
+  --chip-fg: #222;
+  --chip-hover: #dbdbdb;
+  --box: #f0f0f0;
+  --box-fg: #222;
+}
+body.darkmode {
+  --on-accent: #000;
+  --bg: #222;
+  --text: #f5f5f5;
+  --footer: #000;
+  --footer-fg: #f5f5f5;
+  --nav-fg: #5e5e5e;
+  --line: #444;
+  --track: #333;
+  --chip: #111;
+  --chip-fg: #aaa;
+  --chip-hover: #282828;
+  --box: #2e2e2e;
+  --box-fg: #f5f5f5;
 }
 
 /* =================== Reset & Base =================== */
@@ -15,7 +47,7 @@ html, body {
   max-width: 100%;
   height: 100%;
   overflow-x: hidden;
-  background-color: #f6f6f6;
+  background-color: #f6f6f6;   /* html: fallback, script.js sets the real page color */
   color: #222;
   font-family: monospace;
   text-align: center;
@@ -25,11 +57,9 @@ html, body {
   margin: 0;
   padding: 0;
 }
-
-/* ---- Dark Mode ---- */
-body.darkmode {
-  background-color: #222;
-  color: #f5f5f5;
+body {
+  background-color: var(--bg);
+  color: var(--footer-fg);
 }
 
 /* =================== Header =================== */
@@ -44,20 +74,14 @@ header img {
 
 a {
   font-size: 12px;
-  color: black;
+  color: var(--footer-fg);
   text-underline-offset: 4px;
-  text-decoration-color: #ff4242;
-}
-body.darkmode a {
-  color: white;
+  text-decoration-color: var(--accent);
 }
 
 .fontheader {
   font-size: 15px;
-  color: black;
-}
-body.darkmode .fontheader {
-  color: white;
+  color: var(--text);
 }
 
 /* =================== Main Text =================== */
@@ -66,6 +90,7 @@ body.darkmode .fontheader {
   font-size: 26px;
   font-family: system-ui, sans-serif;   /* the fallback font, until a font is loaded */
   line-height: 1.5em;
+  color: var(--text);
   flex-direction: column;
   padding: 20px;
   display: flex;
@@ -167,16 +192,12 @@ footer {
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: white;
+  background-color: var(--footer);
   z-index: 100;
-  border-top: 1.5px solid #AAA;
+  border-top: 1.5px solid var(--line);
   height: 100px;
   overflow-x: hidden;
   padding-bottom: env(safe-area-inset-bottom);
-}
-body.darkmode footer {
-  background-color: black;
-  border-top-color: #444;
 }
 
 .footer-container {
@@ -210,15 +231,7 @@ body.darkmode footer {
 #tab4:checked ~ nav .tab4 label,
 #tab5:checked ~ nav .tab5 label,
 #tab6:checked ~ nav .tab6 label {
-  color: black;
-}
-body.darkmode #tab1:checked ~ nav .tab1 label,
-body.darkmode #tab2:checked ~ nav .tab2 label,
-body.darkmode #tab3:checked ~ nav .tab3 label,
-body.darkmode #tab4:checked ~ nav .tab4 label,
-body.darkmode #tab5:checked ~ nav .tab5 label,
-body.darkmode #tab6:checked ~ nav .tab6 label {
-  color: white;
+  color: var(--footer-fg);
 }
 
 .pc-tab nav {
@@ -243,7 +256,7 @@ body.darkmode #tab6:checked ~ nav .tab6 label {
 
 .pc-tab ul li label {
   display: inline-block;
-  color: #4445;
+  color: var(--nav-fg);
   cursor: pointer;
   position: relative;
   padding: 4px 8px 0;
@@ -273,10 +286,6 @@ body.darkmode #tab6:checked ~ nav .tab6 label {
   opacity: 1;
 }
 
-body.darkmode .pc-tab ul li label {
-  color: #5e5e5e;
-}
-
 /* =================== Sliders =================== */
 .font-slider {
   display: flex;
@@ -302,7 +311,7 @@ body.darkmode .pc-tab ul li label {
   appearance: none;
   width: 100%;
   height: 4px;
-  background: #ccc;
+  background: var(--track);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -311,10 +320,7 @@ body.darkmode .pc-tab ul li label {
 .slider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
-  background: #ccc;
-}
-body.darkmode .slider::-webkit-slider-runnable-track {
-  background: #333;
+  background: var(--track);
 }
 
 .slider::-webkit-slider-thumb {
@@ -331,10 +337,7 @@ body.darkmode .slider::-webkit-slider-runnable-track {
 .slider::-moz-range-track {
   height: 4px;
   border-radius: 2px;
-  background: #ccc;
-}
-body.darkmode .slider::-moz-range-track {
-  background: #333;
+  background: var(--track);
 }
 .slider::-moz-range-thumb {
   width: 30px;
@@ -342,10 +345,6 @@ body.darkmode .slider::-moz-range-track {
   background: var(--accent);
   border: none;
   cursor: pointer;
-}
-
-body.darkmode .slider {
-  background: #ff424288;
 }
 
 /* =================== Checkbox Buttons =================== */
@@ -356,9 +355,9 @@ body.darkmode .slider {
 }
 
 input.hidden+label {
-  color: #222;
-  background-color: #ECECEE;
-  padding: 6px;
+  color: var(--chip-fg);
+  background-color: var(--chip);
+  padding: 6px 12px;
   border-radius: 25px;
   cursor: pointer;
 }
@@ -367,26 +366,11 @@ input.hidden:checked+label {
   background-color: var(--accent-bg);
 }
 input.hidden+label:hover {
-  background-color: #dbdbdb;
+  background-color: var(--chip-hover);
 }
 input.hidden:checked+label:hover {
-  background-color: #ff4242;
-  color: white;
-}
-body.darkmode input.hidden+label {
-  color: #aaa;
-  background-color: #111;
-}
-body.darkmode input.hidden:checked+label {
-  color: var(--accent);
-  background-color: var(--accent-bg);
-}
-body.darkmode input.hidden+label:hover {
-  background-color: #282828;
-}
-body.darkmode input.hidden:checked+label:hover {
-  background-color: #ff4242;
-  color: black;
+  background-color: var(--accent);
+  color: var(--on-accent);
 }
 
 /* =================== Buttons =================== */
@@ -404,7 +388,7 @@ body.darkmode input.hidden:checked+label:hover {
 #randbutton:hover {
   background: var(--accent);
   border-radius: 5px;
-  color: white;
+  color: var(--on-accent);
 }
 
 /* =================== Right-Side Header (CSS code preview) =================== */
@@ -477,21 +461,16 @@ body.darkmode .show, body.darkmode .hide {
   z-index: 90;
   width: 38px;
   height: 38px;
-  background: white;
-  color: #222;
-  border: 1.5px solid #AAA;
+  background: var(--footer);
+  color: var(--footer-fg);
+  border: 1.5px solid var(--line);
   border-radius: 50%;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: border-color .15s;
 }
-body.darkmode .DarkModeLabel {
-  background: black;
-  border-color: #444;
-}
 /* hover only changes the border, so the icon never blends with the background */
-.DarkModeLabel:hover,
-body.darkmode .DarkModeLabel:hover {
+.DarkModeLabel:hover {
   border-color: var(--accent);
 }
 
@@ -505,7 +484,7 @@ body.darkmode .DarkModeLabel:hover {
   pointer-events: none;
   transition: opacity .2s, transform .2s;
 }
-.icon.on { color: var(--accent); }
+.icon.on, .icon.off { color: var(--accent); }
 
 /* scoped to the dark-mode icons: a bare .on would also hide every button that uses the .on state */
 .icon.on { opacity: 0 }
@@ -585,11 +564,10 @@ body.darkmode #dropzone { background: rgba(20, 20, 20, .75); }
   align-self: stretch;
   gap: 6px;
   padding-inline-end: 8px;
-  background: #fff;
+  background: var(--footer);
 }
-body.darkmode #fontbulk { background: #000; }
 .tab5.nofonts #fontbulk { display: none; }
-#testgroup, #wikigroup { display: contents; }
+
 /* Test tab: the Wiki button switches the row between tests and the Wikipedia menu */
 .tab6.wikimode #testgroup { display: none; }
 .tab6:not(.wikimode) #wikigroup { display: none; }
@@ -621,8 +599,8 @@ body.darkmode #fontbulk { background: #000; }
   flex: 0 0 auto;
   height: 32px;
   border-radius: 16px;
-  background: #ECECEE;
-  color: #222;
+  background: var(--chip);
+  color: var(--chip-fg);
 }
 .chip.active {
   background: var(--accent-bg);
@@ -631,7 +609,7 @@ body.darkmode #fontbulk { background: #000; }
 .chipname {
   height: 100%;
   max-width: 150px;
-  padding: 0 4px 0 12px;
+  padding: 6px 12px;
   border: none;
   background: none;
   color: inherit;
@@ -653,8 +631,6 @@ body.darkmode #fontbulk { background: #000; }
   opacity: .5;
 }
 .chipx:hover { opacity: 1; color: var(--accent); }
-body.darkmode .chip { background: #111; color: #aaa; }
-body.darkmode .chip.active { background: var(--accent-bg); color: var(--accent); }
 
 .sizelabel {
   font: 11px monospace !important;
@@ -684,17 +660,15 @@ body.darkmode .chip.active { background: var(--accent-bg); color: var(--accent);
 .btn {
   flex: 0 0 auto;
   height: 32px;
-  padding: 0 12px;
+  padding: 6px 12px;
   border: none;
   border-radius: 16px;
-  background: #ECECEE;
-  color: #222;
+  background: var(--chip);
+  color: var(--chip-fg);
   font: 12px monospace;
   cursor: pointer;
 }
-.btn:hover { background: #dbdbdb; }
-body.darkmode .btn { background: #111; color: #aaa; }
-body.darkmode .btn:hover { background: #282828; }
+.btn:hover { background: var(--chip-hover); }
 /* Auto-reload toggle (fixed, next to the dark-mode button) */
 #autobtn {
   position: fixed;
@@ -703,26 +677,21 @@ body.darkmode .btn:hover { background: #282828; }
   z-index: 90;
   width: 38px;
   height: 38px;
-  border: 1.5px dashed #AAA;
+  border: 1.5px dotted var(--line);
   border-radius: 50%;
-  background: white;
-  color: #222;
+  background: var(--footer);
+  color: var(--footer-fg);
   font: 20px monospace;
   cursor: pointer;
-  opacity: .6;
   -webkit-tap-highlight-color: transparent;
   transition: opacity .15s, border-color .15s, color .15s;
 }
 #autobtn:hover { opacity: 1; border-color: var(--accent); }
-#autobtn.on { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-bg); opacity: 1; }
-body.darkmode #autobtn { background: black; color: #aaa; border-color: #444; }
-body.darkmode #autobtn.on { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
+#autobtn.on { border-style: solid; border-color: var(--accent); color: var(--accent); opacity: 1; }
 input.hidden + label.zero { opacity: .5; }
 .btn.on { background: var(--accent-bg); color: var(--accent); }
 .btn.on:hover { background: var(--accent-bg); }
-body.darkmode .btn.on { background: var(--accent-bg); color: var(--accent); }
-.btn.danger:hover { background: var(--accent); color: #fff; }
-body.darkmode .btn.danger:hover { background: var(--accent); color: #000; }
+.btn.danger:hover { background: var(--accent); color: var(--on-accent); }
 
 #fonturl,
 #wikilang {
@@ -730,7 +699,7 @@ body.darkmode .btn.danger:hover { background: var(--accent); color: #000; }
   width: 180px;
   height: 32px;
   padding: 0 12px;
-  border: 1.5px solid #AAA;
+  border: 1.5px solid var(--line);
   border-radius: 16px;
   background: transparent;
   color: inherit;
@@ -742,8 +711,6 @@ body.darkmode .btn.danger:hover { background: var(--accent); color: #000; }
 #wikilang { flex-basis: 70px; width: 70px; text-align: center; }
 #fonturl:focus,
 #wikilang:focus { border-color: var(--accent); }
-body.darkmode #fonturl,
-body.darkmode #wikilang { border-color: #444; }
 
 #wikibtn.busy {
   color: var(--accent);
@@ -751,8 +718,7 @@ body.darkmode #wikilang { border-color: #444; }
   pointer-events: none;
   animation: wikipulse .8s ease-in-out infinite;
 }
-#wikibtn.err { background: var(--accent); color: #fff; }
-body.darkmode #wikibtn.err { color: #000; }
+#wikibtn.err { background: var(--accent); color: var(--on-accent); }
 @keyframes wikipulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .4; }
@@ -778,10 +744,10 @@ body.darkmode #wikibtn.err { color: #000; }
   max-height: 100%;
   overflow-y: auto;
   padding: 18px;
-  border: 1.5px solid #AAA;
+  border: 1.5px solid var(--line);
   border-radius: 20px;
-  background: #fff;
-  color: #222;
+  background: var(--footer);
+  color: var(--footer-fg);
   text-align: start;
 }
 .tm-card label { font-size: 12px; opacity: .7; }
@@ -789,7 +755,7 @@ body.darkmode #wikibtn.err { color: #000; }
 .tm-card textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1.5px solid #AAA;
+  border: 1.5px solid var(--line);
   border-radius: 12px;
   background: transparent;
   color: inherit;
@@ -804,12 +770,7 @@ body.darkmode #wikibtn.err { color: #000; }
 .tm-card textarea:focus { border-color: var(--accent); }
 .tm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .tm-card .btn.primary { background: var(--accent-bg); color: var(--accent); }
-.tm-card .btn.primary:hover { background: var(--accent); color: #fff; }
-body.darkmode .tm-card { background: #000; border-color: #444; color: #f5f5f5; }
-body.darkmode .tm-card input,
-body.darkmode .tm-card textarea { border-color: #444; }
-body.darkmode .tm-card .btn.primary { background: var(--accent-bg); color: var(--accent); }
-body.darkmode .tm-card .btn.primary:hover { background: var(--accent); color: #000; }
+.tm-card .btn.primary:hover { background: var(--accent); color: var(--on-accent); }
 
 /* =================== Dynamic axes / features =================== */
 #axes, #features { display: contents; }
@@ -888,7 +849,7 @@ body.darkmode .tm-card .btn.primary:hover { background: var(--accent); color: #0
 }
 
 ::selection {
-  background-color: #ff8080;
+  background-color: var(--selection);
 }
 
 #tab1:checked ~ section,
@@ -924,10 +885,10 @@ body.darkmode .tm-card .btn.primary:hover { background: var(--accent); color: #0
   width: 34px;
   height: 34px;
   padding: 0;
-  border: 1.5px solid #AAA;
+  border: 1.5px solid var(--line);
   border-radius: 50%;
-  background: white;
-  color: #222;
+  background: var(--footer);
+  color: var(--footer-fg);
   font: italic bold 17px Georgia, serif;
   cursor: pointer;
   opacity: .4;
@@ -939,7 +900,6 @@ body.darkmode .tm-card .btn.primary:hover { background: var(--accent); color: #0
 /* dashed + dimmer when there is nothing to show */
 #aboutbtn.off { cursor: default; border-style: dashed; }
 #aboutbtn.off:hover { opacity: .5; }
-body.darkmode #aboutbtn { background: black; color: #ddd; border-color: #444; }
 
 #aboutpop {
   position: fixed;
@@ -950,10 +910,10 @@ body.darkmode #aboutbtn { background: black; color: #ddd; border-color: #444; }
   max-height: 60vh;
   overflow-y: auto;
   padding: 12px 14px;
-  border: 1.5px solid #AAA;
+  border: none;
   border-radius: 14px;
-  background: white;
-  color: #222;
+  background: var(--box);
+  color: var(--box-fg);
   font: 13px/1.6 system-ui, monospace;
   text-align: start;
   white-space: pre-wrap;
@@ -969,8 +929,7 @@ body.darkmode #aboutbtn { background: black; color: #ddd; border-color: #444; }
 #aboutpop.open { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
 #aboutpop.empty { opacity: .8; font: 12px monospace; }
 #aboutpop b { display: block; margin-bottom: 6px; }
-#aboutpop a { display: block; font-size: 12px; font-family: monospace; }
-body.darkmode #aboutpop { background: black; color: #f5f5f5; border-color: #444; }
+#aboutpop a { display: block; font-size: 12px; font-family: monospace; color: var(--box-fg); }
 
 /* =================== Same row height in every footer tab =================== */
 /* fixed height + centered content, so the controls sit at the same y in Layout, Variation, OpenType, Font and Test */
@@ -996,7 +955,7 @@ body.darkmode #aboutpop { background: black; color: #f5f5f5; border-color: #444;
 #ottag, #otval {
   height: 32px;
   padding: 0 10px;
-  border: 1.5px solid #AAA;
+  border: 1.5px solid var(--line);
   border-radius: 16px;
   background: transparent;
   color: inherit;
@@ -1010,9 +969,6 @@ body.darkmode #aboutpop { background: black; color: #f5f5f5; border-color: #444;
 #otval { width: 84px; flex: 0 0 84px; }
 #ottag:focus, #otval:focus { border-color: var(--accent); }
 #ottag.err, #otval.err { border-color: var(--accent); background: var(--accent-bg); }
-body.darkmode #ottag, body.darkmode #otval { border-color: #444; }
-body.darkmode #ottag:focus, body.darkmode #otval:focus,
-body.darkmode #ottag.err, body.darkmode #otval.err { border-color: var(--accent); }
 .font-slider .otx {
   padding: 0 2px 2px 0;
   border: none;
@@ -1080,14 +1036,8 @@ footer {
   z-index: 110;
   margin: 0;
   padding: 3px 7px;
-  background: white;
-  border-bottom: 1px solid black;
-}
-
-body.darkmode .right-side-header,
-body.darkmode .status {
-  background: #1e1e1e;
-  border-bottom: 1px solid white;
+  background: var(--footer);
+  border-bottom: 1px solid var(--footer-fg);
 }
 
 @media (max-width: 600px) {
@@ -1125,7 +1075,7 @@ body.darkmode .status {
 .tab6.glyphmode #testgroup { display: none; }
 .tab6.wikimode #glyphtoggle { display: none; }
 .tab6.glyphmode #wikitoggle { display: none; }
-#glyphgroup { display: contents; }
+
 .tab6:not(.glyphmode) #glyphgroup { display: none; }
 
 /* =================== Outline style (stroke, no fill) for Wiki and Whole characters =================== */
@@ -1133,28 +1083,19 @@ body.darkmode .status {
 .chip.outline {
   background: transparent !important;
   border: 1.5px solid var(--accent);
-  color: #222;
+  color: var(--footer-fg);
 }
-body.darkmode .btn.outline,
-body.darkmode .chip.outline { color: #ddd; }
 .btn.outline:hover,
 .chip.outline:hover,
-body.darkmode .btn.outline:hover,
-body.darkmode .chip.outline:hover,
 .btn.outline.on,
-.chip.outline.active,
-body.darkmode .btn.outline.on,
-body.darkmode .chip.outline.active {
+.chip.outline.active {
   color: var(--accent);
 }
 
-/* the Wiki article and the glyph table sit in a stroked frame with no fill */
+/* the glyph table sits in a box (Box Color); the Wiki article has no background */
 #Wiki {
-  background: #f0f0f0;
-  border-radius: 18px;
-  padding: 6px 14px;
+  padding: 6px 0;
 }
-body.darkmode #Wiki { background: #2e2e2e; }
 #Glyphs { padding: 6px 0; }
 
 .glyphgrid {
@@ -1172,16 +1113,12 @@ body.darkmode #Wiki { background: #2e2e2e; }
   line-height: 1;
   overflow: hidden;
   border-radius: 8px;
-  background: #f0f0f0;
+  background: var(--box);
   cursor: pointer;
 }
-body.darkmode .glyph { background: #2e2e2e; }
 .glyph:hover { color: var(--accent); }
 .glyphmore { display: block; margin: 14px auto; }
 .glyphmore[hidden] { display: none; }
-
-#aboutpop { border: none; background: #f0f0f0; }
-body.darkmode #aboutpop { border: none; background: #2e2e2e; }
 
 /* glyph size follows the cell width, not the slider: always the largest size the cell allows.
    The slider only decides how wide the cells (and so how many columns) are. */
@@ -1212,9 +1149,9 @@ body.darkmode #aboutpop { border: none; background: #2e2e2e; }
   padding-top: 3px;
   box-sizing: border-box;
   overflow: hidden;
-  background: rgba(0, 0, 0, .07);
+  background: rgba(128, 128, 128, .16);
   border-radius: 0 0 8px 8px;
-  color: #555;
+  color: var(--box-fg);
   font: 10px/13px monospace;
   font-variation-settings: normal;
   font-feature-settings: normal;
@@ -1224,11 +1161,10 @@ body.darkmode #aboutpop { border: none; background: #2e2e2e; }
   -webkit-text-stroke: 0;
   -webkit-text-fill-color: currentColor;
 }
-.glyph .cap > div { display: none; height: 13px; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glyph .cap > div { display: none; height: 13px; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .75; }
 #Glyphs.cap-u .cap, #Glyphs.cap-n .cap { display: block; }
 #Glyphs.cap-u .cap .cu, #Glyphs.cap-n .cap .cn { display: block; }
 .glyph .cap .dim { opacity: .55; font-style: italic; }
-body.darkmode .glyph .cap { background: rgba(255, 255, 255, .08); color: #aaa; }
 
 /* the two caption checkboxes: same stroke-only look as the other Whole characters controls */
 input.hidden + label.outline {
@@ -1241,10 +1177,232 @@ input.hidden + label.outline {
   border-radius: 16px;
   border: 1.5px solid var(--accent);
   background: transparent !important;
-  color: #222;
+  color: var(--footer-fg);
   font: 12px monospace;
 }
-body.darkmode input.hidden + label.outline { color: #ddd; }
 input.hidden:checked + label.outline,
 input.hidden + label.outline:hover,
 input.hidden:checked + label.outline:hover { color: var(--accent) !important; }
+
+/* =================== Layout: color pickers + color list =================== */
+.colorpick {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  height: 32px;
+  padding: 0 6px 0 12px;
+  border-radius: 16px;
+  background: var(--chip);
+  color: var(--chip-fg);
+  font: 12px monospace;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.colorpick:hover { background: var(--chip-hover); }
+.colorpick input[type=color] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.colorpick input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+.colorpick input[type=color]::-webkit-color-swatch { border: none; border-radius: 50%; }
+.colorpick input[type=color]::-moz-color-swatch { border: none; border-radius: 50%; }
+#colorlist { display: contents; }
+
+/* color chips: the chip itself is painted with the preset's text / background colors (inline style) */
+.chip.cchip { border: 1px solid #8886; }
+.chip.cchip.active { box-shadow: 0 0 0 2px var(--accent); }
+
+/* the list is split into two framed groups: sun = light mode colors, moon = dark mode colors (same 40px footer row) */
+.cgroupbox {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  height: 32px;
+  padding: 0 0 0 10px;
+  border-radius: 16px;
+}
+.cgroupbox.light { background: #f4f4f4; color: #444; }
+.cgroupbox.dark { background: #2b2b2b; border-color: #2b2b2b; color: #ddd; }
+body.darkmode .cgroupbox.light { background: #d9d9d9; color: #333; }
+.cgicon { display: inline-flex; flex: 0 0 auto; opacity: .85; }
+.cgicon svg { width: 16px; height: 16px; }
+
+/* =================== Add-color dialog =================== */
+#colormodal {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .35);
+}
+#colormodal.open { display: flex; }
+.tm-color { display: flex; gap: 8px; align-items: center; }
+.tm-color input[type=text] { flex: 1 1 auto; min-width: 0; }
+.tm-color input[type=color] { flex: 0 0 46px; width: 46px; height: 36px; padding: 2px; cursor: pointer; }
+.tm-card select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: 16px monospace;
+  outline: none;
+}
+.tm-card select:focus { border-color: var(--accent); }
+.tm-card select option { color: #222; }
+#cmprev {
+  padding: 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  text-align: center;
+  font: 20px/1.4 system-ui, sans-serif;
+}
+
+/* =================== Layout Colors / Instances: toggled groups =================== */
+#layoutbasic, #colorgroup,
+#axesgroup, #instgroup {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+#instances { display: contents; }
+
+.tab1:not(.colormode) #colorgroup { display: none; }
+.tab1.colormode #layoutbasic { display: none; }
+
+.tab2:not(.instmode) #instgroup { display: none; }
+.tab2.instmode #axesgroup { display: none; }
+
+/* the menu slides up from the bottom (the footer row has overflow-y:hidden, so it is clipped there) */
+@keyframes slideup {
+  from { transform: translateY(110%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.slidein { animation: slideup .28s cubic-bezier(.2, .8, .2, 1); }
+
+/* =================== Material icons (inline SVG, no font to load) =================== */
+.mi { width: 18px; height: 18px; fill: currentColor; flex: 0 0 auto; display: block; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.btn .mi { width: 18px; height: 18px; }
+.dz-icon { display: flex; align-items: center; justify-content: center; }
+.dz-icon .mi { width: 38px; height: 38px; }
+#randbutton .mi { width: 28px; height: 28px; }
+.chipr .mi, .chipx .mi, .font-slider .otx .mi { width: 16px; height: 16px; }
+.chipr, .chipx, .font-slider .otx { display: inline-flex; align-items: center; justify-content: center; }
+#autobtn { display: flex; align-items: center; justify-content: center; padding: 0; }
+#autobtn .mi { width: 22px; height: 22px; }
+.cgicon .mi { width: 16px; height: 16px; }
+
+/* chip icons (reload / remove): same box and no vertical padding, so both sit on the same center line */
+.chipr, .chipx { height: 100%; padding-top: 0; padding-bottom: 0; line-height: 0; }
+.chipr { padding-left: 4px; padding-right: 2px; }
+.chipx { padding-left: 2px; padding-right: 8px; }
+
+
+/* =================== Test tab: Wiki / Glyph List menus (like Layout Colors / Instances) =================== */
+/* real flex boxes (not display: contents) so the slide-up animation works on them */
+#testgroup, #wikigroup, #glyphgroup {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+/* =================== Layout: align icons =================== */
+.aligns input.hidden + label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+}
+
+/* edit (pencil) button on color chips: same look as the reload / remove buttons */
+.chipe {
+  height: 100%;
+  padding: 0 2px 0 6px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: .5;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .15s, color .15s;
+}
+.chipe:hover { opacity: 1; color: var(--accent); }
+.chipe .mi { width: 16px; height: 16px; }
+.chipe.last { padding-right: 10px; }   /* Light / Dark: no remove button after it */
+
+/* =================== Global "back" bar: thin strip at the top of the footer, shown inside a sub-menu =================== */
+/* it sits over the footer's top padding (the controls start below it), so the footer keeps its height */
+#backbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  z-index: 5;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--footer-fg);
+  opacity: .5;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity .15s, color .15s;
+}
+footer.submenu #backbar { display: flex; }
+/* bigger touch area, reaching a little above the footer */
+#backbar::before { content: ""; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+#backbar:hover { opacity: 1; color: var(--accent); background: var(--accent-bg); }
+#backbar .mi { width: 14px; height: 14px; }
+
+/* inside a sub-menu the old "Back" buttons are gone: the bar at the top of the footer does that job */
+.tab1.colormode #colortoggle,
+.tab2.instmode #insttoggle,
+.tab6.wikimode #wikitoggle,
+.tab6.glyphmode #glyphtoggle { display: none; }
+
+/* going back: the sub-menu slides down and fades out (the opposite of .slidein), then the normal row fades in */
+@keyframes slidedown {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(110%); opacity: 0; }
+}
+.slideout { animation: slidedown .22s cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fadein { animation: fadein .2s ease-out; }
+
+
+/* =================== Touch: swipe down inside a sub-menu goes back =================== */
+/* only horizontal panning stays native, so a vertical drag reaches the touch handlers instead of scrolling the page */
+footer.submenu,
+footer.submenu .pc-tab > section { touch-action: pan-x; }
+
+/* =================== Layout tab: equal spacing between all items =================== */
+/* the sliders / checkbox buttons had 6px side padding, the alignment group had a margin: now every item is separated by the same gap only */
+#tab1:checked ~ section .tab1 { gap: 14px; }
+#layoutbasic { gap: 14px; }
+#layoutbasic > .font-slider { padding-left: 0; padding-right: 0; }
+#layoutbasic > .aligns { margin-inline-start: 0; }

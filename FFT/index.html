@@ -7,14 +7,14 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Fontamin Font Tester</title>
-      <link rel="stylesheet" href="style.css?v=1.3">
-      <script src="script.js?v=1.3" defer></script>
+      <link rel="stylesheet" href="style.css?v=1.4">
+      <script src="script.js?v=1.4" defer></script>
    </head>
    <body spellcheck="false">
       <script>try{if(localStorage.getItem("fft-dark")==="1")document.body.classList.add("darkmode")}catch(e){}</script>
       <div id="dropzone">
          <div class="dz-card">
-            <div class="dz-icon">⬇</div>
+            <div class="dz-icon"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg></div>
             <b>Drop font files here</b>
             <small>ttf · otf · woff · woff2 — multiple files allowed</small>
          </div>
@@ -45,6 +45,7 @@
             <input id="tab6" type="radio" name="pct" autocomplete="off" />
             <section style="padding-top:5px;">
                <div class="tab1">
+                  <div id="layoutbasic">
                   <p class="font-slider">
                      <label>Size:</label>
                      <span>
@@ -57,18 +58,37 @@
                      <input class="slider" autocomplete="off" id="fontheightinput" type="range" min="1" max="2" value="1.5" step="0.01" style="height:4px;">
                      </span>
                   </p>
+                  <div class="aligns" role="radiogroup" aria-label="Text alignment">
+                     <input class="hidden" type="radio" name="align" id="alright" value="right" autocomplete="off"><label for="alright" title="Align right (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21h18v-2H3v2zm6-4h12v-2H9v2zm-6-4h18v-2H3v2zm6-4h12V7H9v2zM3 3v2h18V3H3z"/></svg></label>
+                     <input class="hidden" type="radio" name="align" id="alleft" value="left" autocomplete="off"><label for="alleft" title="Align left (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/></svg></label>
+                     <input class="hidden" type="radio" name="align" id="aljustify" value="justify" autocomplete="off"><label for="aljustify" title="Justify (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V7H3v2zm0-6v2h18V3H3z"/></svg></label>
+                  </div>
                   <p class="font-slider"><input class="hidden" type="checkbox" id="outline" autocomplete="off"><label for="outline">Outline</label></p>
                   <p class="font-slider"><input class="hidden" type="checkbox" id="guidetoggle" autocomplete="off"><label for="guidetoggle" title="Show ascender, descender, x-height and cap-height lines">Guides</label></p>
-                  <div class="aligns" role="radiogroup" aria-label="Text alignment">
-                     <input class="hidden" type="radio" name="align" id="alright" value="right" autocomplete="off"><label for="alright" title="Align right (click again to go back to the text's own alignment)">Right</label>
-                     <input class="hidden" type="radio" name="align" id="alleft" value="left" autocomplete="off"><label for="alleft" title="Align left (click again to go back to the text's own alignment)">Left</label>
-                     <input class="hidden" type="radio" name="align" id="aljustify" value="justify" autocomplete="off"><label for="aljustify" title="Justify (click again to go back to the text's own alignment)">Justify</label>
                   </div>
+                  <div id="colorgroup">
+                  <label class="colorpick" title="Text color"><span>Text Color</span><input type="color" id="txtcolor" value="#222222"></label>
+                  <label class="colorpick" title="Page background color (a dark color switches the interface to dark mode)"><span>Background Color</span><input type="color" id="bgcolor" value="#f6f6f6"></label>
+                  <label class="colorpick" title="Accent color: tab dots, slider thumbs, active items, guides, hover highlights"><span>Accent Color</span><input type="color" id="acccolor" value="#ff4242"></label>
+                  <label class="colorpick" title="Footer background"><span>Footer Color</span><input type="color" id="footcolor" value="#ffffff"></label>
+                  <label class="colorpick" title="Background of buttons, chips and the on/off checkboxes"><span>Button Color</span><input type="color" id="chipcolor" value="#ececee"></label>
+                  <label class="colorpick" title="Background of glyph cells and the info popup"><span>Box Color</span><input type="color" id="boxcolor" value="#f0f0f0"></label>
+                  <button type="button" id="colorlight" class="btn" title="Make the current text/background colors the main colors of light mode">Set to light mode</button>
+                  <button type="button" id="colordark" class="btn" title="Make the current text/background colors the main colors of dark mode">Set to dark mode</button>
+                  <div id="colorlist"></div>
+                  <button type="button" id="coloradd" class="btn" title="Add a new color pair to the list"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+                  <button type="button" id="colorreset" class="btn" title="Add back the built-in colors that are missing"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/></svg></button>
+                  </div>
+                  <button type="button" id="colortoggle" class="btn outline" title="Show / hide the color settings">Layout Colors<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
                   <p class="right-side-header" id="text3"></p>
                </div>
                <div class="tab2">
-                  <button id="randbutton" type="button" style="font-size: 20px;">🎲</button>
-                  <div id="axes"></div>
+                  <div id="axesgroup">
+                     <button id="randbutton" type="button" style="font-size: 20px;" title="Random variation"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9C6.67 9 6 8.33 6 7.5S6.67 6 7.5 6 9 6.67 9 7.5 8.33 9 7.5 9zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5S17.33 9 16.5 9z"/></svg></button>
+                     <div id="axes"></div>
+                  </div>
+                  <div id="instgroup"><div id="instances"></div></div>
+                  <button type="button" id="insttoggle" class="btn outline" title="Show the named instances of this font">Instances<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
                   <p class="right-side-header" id="text1"></p>
                </div>
                <div class="tab3">
@@ -84,29 +104,26 @@
                <div class="tab4">
                   <div style="direction:ltr;text-align:center;">
                      <a href="https://fontamin.com/" target="_blank"><svg class="fontamin-logo" viewBox="0 0 35.166 35.957" role="img" aria-label="Fontamin"><g transform="matrix(0.1808294,0,0,0.1808294,-41.132058,-16.305489)" fill="none"><g transform="matrix(5.4557778,0,0,5.4557778,228.76969,91.506299)" fill="none" stroke="currentColor" stroke-width="1.45488"><path d="m 27.879766,22.664017 c -3.617537,0.442468 -7.048319,0.531094 -10.501202,0.534409 -3.638092,0 -6.705308,-0.218802 -8.643148,-0.888471 C 6.979691,21.702833 6.391134,20.560196 6.413014,18.826572 6.437324,16.8642 6.716023,15.750958 7.185896,14.04275 L 1.013229,12.867846 C 1.119315,9.102672 2.120061,6.0118074 4.33262,4.1818214 6.665853,2.2517166 10.433678,1.205442 15.989941,1.3113071 c 0.957428,0 1.94005,0.061884 3.412437,0.1989116 l 0.320027,0.828798 c -3.004227,2.7739317 -4.826478,7.7869433 -4.826478,12.8631663 0,2.561097 0.564025,4.55861 1.88303,5.918723 1.319224,1.360333 3.301709,1.96613 5.821918,1.96613"/><path d="m 26.550816,1.6264714 c 5.366854,3.1184906 7.68373,8.1891876 7.68373,17.0204166 0,6.391912 -1.233692,10.306932 -3.945519,12.678179 -2.711827,2.371025 -7.118601,3.328011 -13.726884,3.328011 -4.721939,0 -8.677626,-0.806255 -11.378844,-2.615908 C 2.48208,30.227738 0.931454,27.463531 0.931454,23.110463"/></g><path d="m 354.8169,172.22339 c -7.07566,0 -11.16632,-3.82229 -11.16632,-9.70471 0,-9.74509 5.09183,-16.28121 13.32217,-16.28121 9.62156,0 14.92291,8.70534 16.78924,24.01638 -6.0792,1.30593 -11.49491,1.96954 -18.94509,1.96954 z" fill="none" stroke="currentColor" stroke-width="7.9375" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4"/></g></svg></a>
-                     FFT(Fontamin Font Tester) - v1.1<br>
+                     FFT(Fontamin Font Tester) - v1.2<br>
                      Loaded fonts are not saved. Refresh clears them.
                   </div>
                </div>
                <div class="tab5">
                   <div id="fontbulk">
-                     <button type="button" id="reloadall" class="btn" title="Reload all fonts">↻ all</button>
-                     <button type="button" id="removeall" class="btn danger" title="Remove all fonts (the fallback font stays)">× all</button>
+                     <button type="button" id="reloadall" class="btn" title="Reload all fonts"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>all</button>
+                     <button type="button" id="removeall" class="btn danger" title="Remove all fonts (the fallback font stays)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>all</button>
                   </div>
                   <div id="fontlist"></div>
-                  <button type="button" id="pickbtn" class="btn">+ Font</button>
+                  <button type="button" id="pickbtn" class="btn"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Font</button>
                   <input type="file" id="fontfile" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
                   <input type="url" id="fonturl" placeholder="https://…/font.woff2" autocomplete="off">
                   <button type="button" id="urlbtn" class="btn">Load</button>
                   <p class="status" id="fontstatus"></p>
                </div>
                <div class="tab6">
-                  <button type="button" id="wikitoggle" class="btn outline" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki</button>
-                  <button type="button" id="glyphtoggle" class="btn outline" title="Show every character the font has (read from its cmap table) + glyphs without unicode values from OpenType substitution tables">Glyph List</button>
-                  <div id="glyphgroup"><input class="hidden" type="checkbox" id="gshowuni" autocomplete="off"><label class="outline" for="gshowuni" title="Show the Unicode value under each glyph">Unicode Values</label><input class="hidden" type="checkbox" id="gshownames" autocomplete="off"><label class="outline" for="gshownames" title="Show the glyph name under each glyph (a #number if the font has no names)">Names</label><button type="button" id="glyphcopy" class="btn outline" title="Copy all characters of this font">Copy all</button></div>
                   <div id="testgroup">
                      <div id="testlist"></div>
-                     <button type="button" id="testadd" class="btn" title="Save the text currently on screen as a new test">+</button>
+                     <button type="button" id="testadd" class="btn" title="Save the text currently on screen as a new test"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
                      <div id="dangerzone" title="Danger zone"><span class="dzlabel">danger</span></div>
                   </div>
                   <div id="wikigroup">
@@ -115,6 +132,9 @@
                      <button type="button" id="wikibtn" class="btn outline" title="Fetch a long random Wikipedia article in this language">Fetch article</button>
                      <p class="status" id="wikistatus"></p>
                   </div>
+                  <div id="glyphgroup"><input class="hidden" type="checkbox" id="gshowuni" autocomplete="off"><label class="outline" for="gshowuni" title="Show the Unicode value under each glyph">Unicode Values</label><input class="hidden" type="checkbox" id="gshownames" autocomplete="off"><label class="outline" for="gshownames" title="Show the glyph name under each glyph (a #number if the font has no names)">Names</label><button type="button" id="glyphcopy" class="btn outline" title="Copy all characters of this font">Copy all</button></div>
+                  <button type="button" id="wikitoggle" class="btn outline" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
+                  <button type="button" id="glyphtoggle" class="btn outline" title="Show every character the font has (read from its cmap table) + glyphs without unicode values from OpenType substitution tables">Glyph List<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
                </div>
             </section>
             <nav>
@@ -145,8 +165,8 @@
       </footer>
       <input type="checkbox" id="negative" class="toggle" autocomplete="off">
       <label class="DarkModeLabel" for="negative">
-            <svg class="icon off" viewBox="0 0 110 110" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="m 53.753687,27.510227 v -1.03e-4 c -0.150732,-0.0042 -0.309633,-0.002 -0.47607,0.0077 -14.397312,0.879879 -25.773663,12.85591 -25.773663,27.432314 0,15.214896 12.3339,27.5488 27.548799,27.5488 12.037991,0 22.268905,-7.71713 26.014232,-18.478131 0.685213,-1.954418 -1.346983,-3.152204 -3.122317,-1.509245 -3.574025,3.309282 -8.362747,5.333005 -13.618663,5.333005 -11.072462,0 -20.050685,-8.978223 -20.050685,-20.050685 0,-7.420572 4.03496,-13.898912 10.02281,-17.363923 2.182664,-1.26288 1.716554,-2.854062 -0.544443,-2.919732 z M 110,55 C 110,85.328283 85.328283,110 55,110 24.671717,110 0,85.328283 0,55 0,24.671717 24.671717,0 55,0 c 30.328283,0 55,24.671717 55,55 z"/></svg>
-      <svg class="icon on" viewBox="0 0 110 110" aria-hidden="true"><path fill="currentColor" d="m 27.506959,33.973485 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474237,6.474237 6.4742376,6.4742376 0 0 1 -6.474237,6.474238 z m 54.986076,54.986082 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474237,6.474238 6.4742376,6.4742376 0 0 1 -6.474237,6.474238 z M 33.981193,82.485329 a 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,6.474238 z M 88.96728,27.499247 a 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 6.4742376,6.4742376 0 0 1 -6.474237,-6.474238 6.4742376,6.4742376 0 0 1 6.474237,-6.474237 6.4742376,6.4742376 0 0 1 6.474238,6.474237 z M 16.118968,61.466528 A 6.4742376,6.4742376 0 0 1 9.64473,54.99229 a 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474238,6.474237 6.4742376,6.4742376 0 0 1 -6.474238,6.474238 z m 77.762069,0 a 6.4742376,6.4742376 0 0 1 -6.474238,-6.474238 6.4742376,6.4742376 0 0 1 6.474238,-6.474237 6.4742376,6.4742376 0 0 1 6.474233,6.474237 6.4742376,6.4742376 0 0 1 -6.474233,6.474238 z M 61.474238,93.873323 A 6.4742376,6.4742376 0 0 1 55,100.34756 6.4742376,6.4742376 0 0 1 48.525762,93.873323 6.4742376,6.4742376 0 0 1 55,87.399086 a 6.4742376,6.4742376 0 0 1 6.474238,6.474237 z m 0,-77.762064 A 6.4742376,6.4742376 0 0 1 55,22.585496 6.4742376,6.4742376 0 0 1 48.525762,16.111259 6.4742376,6.4742376 0 0 1 55,9.6370206 6.4742376,6.4742376 0 0 1 61.474238,16.111259 Z M 80.930931,55.00525 c 2e-6,14.317685 -11.606776,25.924463 -25.924461,25.924461 -14.317683,0 -25.924459,-11.606777 -25.924457,-25.924461 0,-14.317682 11.606775,-25.924457 25.924457,-25.924457 14.317684,-2e-6 25.924461,11.606774 25.924461,25.924457 z"/></svg>
+            <svg class="icon off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <svg class="icon on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
       </label>
 </body>
 </html>

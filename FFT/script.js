@@ -4,6 +4,28 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
+  /* =================== Material icons (inline SVG paths, 24px) =================== */
+  const MI = {
+  "close": "M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+  "edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+  "add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+  "refresh": "M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z",
+  "autorenew_off": "M 12 1 L 12 4 C 10.110532 4 8.3742676 4.6538475 7.0058594 5.7480469 L 4.3046875 3.1210938 L 2.9101562 4.5566406 L 19.695312 20.878906 L 21.089844 19.443359 L 18.388672 16.816406 C 19.399953 15.476516 20 13.808776 20 12 C 20 10.43 19.539766 8.9702344 18.759766 7.7402344 L 17.300781 9.1992188 C 17.740781 10.039219 18 10.99 18 12 C 18 13.264277 17.607243 14.438464 16.9375 15.40625 L 8.4570312 7.1582031 C 9.4501807 6.4295278 10.675372 6 12 6 L 12 9 L 16 5 L 12 1 z M 4.5957031 8.9667969 C 4.2122722 9.9022929 4 10.926005 4 12 C 4 13.57 4.4602344 15.029766 5.2402344 16.259766 L 6.6992188 14.800781 C 6.2492187 13.970781 6 13.01 6 12 C 6 11.487051 6.0640471 10.989138 6.1855469 10.513672 L 4.5957031 8.9667969 z M 12 15 L 8 19 L 12 23 L 12 20 C 13.153315 20 14.249979 19.757171 15.240234 19.318359 L 13.648438 17.769531 L 13.646484 17.769531 C 13.123132 17.918933 12.570852 18 12 18 L 12 15 z",
+  "autorenew": "M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z",
+  "download": "M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z",
+  "delete": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+  "folder_open": "M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z",
+  "casino": "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9C6.67 9 6 8.33 6 7.5S6.67 6 7.5 6 9 6.67 9 7.5 8.33 9 7.5 9zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5S17.33 9 16.5 9z",
+  "restart_alt": "M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z",
+  "expand_more": "M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z",
+  "expand_less": "M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z",
+  "dark_mode": "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z",
+  "light_mode": "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"
+};
+  const icn = n => '<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + MI[n] + '"/></svg>';
+  // button = text + icon (static markup)
+  const setBtn = (b, label, name) => { b.textContent = label; b.insertAdjacentHTML('beforeend', icn(name)); };
+
   /* =================== Elements =================== */
   const target   = $('.dynamic');
   const sizeIn   = $('#fontsizeinput');
@@ -70,6 +92,8 @@
   let guidesOn = false;   // ascender / descender / x-height / cap-height lines
   let gRaf = 0;
   let counter = 0;
+  let colorLine = '';     // 'color: …; background-color: …;' (shown instead of font-size / line-height while Layout Colors is open)
+  let colorCss = '';      // text/background colors chosen in the Layout tab (shown in the CSS preview)
 
   const cleanId = s => s.replace(/\W/g, '_');
   const featName = tag => {
@@ -89,6 +113,10 @@
   const baseName = n => n.replace(/\.[^.]+$/, '');
 
   /* =================== Apply styles =================== */
+  function updateT3() {
+    const colorMode = $('.pc-tab section .tab1').classList.contains('colormode');
+    t3.textContent = colorMode ? colorLine : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`;
+  }
   function applyStyles() {
     const fs = +sizeIn.value, fh = +heightIn.value;
     target.style.fontSize = fs + 'px';
@@ -106,7 +134,7 @@
 
     t1.textContent = `font-variation-settings: ${v || 'normal'};`;
     t2.textContent = `font-feature-settings: ${fset || 'normal'};`;
-    t3.textContent = `font-size: ${fs}px; line-height: ${fh}em;`;
+    updateT3();
     if (glyphOn) updateGlyphSize();
     scheduleGuides();
   }
@@ -153,6 +181,15 @@
     box.appendChild(s);
   };
 
+  /* --- remember the scroll position of the footer row for every menu / sub-menu (so coming back lands where you left) --- */
+  const scrollMem = {};
+  const secEl = () => $('.pc-tab > section');
+  // pos = scrollLeft read BEFORE the menu classes changed (the browser clamps it once the layout changes)
+  function swapScroll(from, to, pos) {
+    scrollMem[from] = pos;
+    secEl().scrollLeft = scrollMem[to] || 0;
+  }
+
   /* =================== Build UI from font info =================== */
   // Variation values are remembered by axis tag and shared by all fonts (clamped to each font's range)
   const axisGlobal = {};
@@ -170,7 +207,7 @@
       const { p, inp } = makeSlider({
         id: 'ax_' + cleanId(a.tag), label: axisLabel(a) + ':',
         min: a.min, max: a.max, step, value: start,
-        onInput: v => { axisVals[a.tag] = axisGlobal[a.tag] = v; applyStyles(); }
+        onInput: v => { axisVals[a.tag] = axisGlobal[a.tag] = v; applyStyles(); syncInstances(); }
       });
       axesBox.appendChild(p);
       attachBubble(inp);
@@ -235,7 +272,7 @@
       p.append(cb, lb);
       if (cf) {
         const xb = document.createElement('button');
-        xb.type = 'button'; xb.className = 'otx'; xb.textContent = '×'; xb.title = 'Remove this feature';
+        xb.type = 'button'; xb.className = 'otx'; xb.innerHTML = icn('close'); xb.title = 'Remove this feature';
         xb.addEventListener('click', () => removeCustom(tag));
         p.appendChild(xb);
       }
@@ -261,10 +298,83 @@
   $('#otadd').addEventListener('click', addCustom);
   [otTag, otVal].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); }));
 
+  /* --- Named instances (Variation tab): buttons, like the OpenType features --- */
+  const instBox = $('#instances'), instToggle = $('#insttoggle'), tab2Row = $('.pc-tab section .tab2');
+
+  // slide-up animation when a sub-menu opens; when going back (backing = true) the sub-menu has just slid down,
+  // so the normal row only fades in. The class is removed and re-added so the animation restarts every time.
+  let backing = false;
+  function slideIn(el) {
+    if (!el) return;
+    const cls = backing ? 'fadein' : 'slidein';
+    el.classList.remove('slidein', 'fadein');
+    void el.offsetWidth;
+    el.classList.add(cls);
+    // remove the class when the animation ends: otherwise it restarts every time the tab is shown again (display none -> shown)
+    const done = () => el.classList.remove(cls);
+    el.addEventListener('animationend', done, { once: true });
+    setTimeout(done, 400);
+  }
+  const syncInstBtn = () => {
+    const n = (info.instances || []).length, on = tab2Row.classList.contains('instmode');
+    setBtn(instToggle, on ? 'Back' : n ? 'Instances · ' + n : 'Instances', on ? 'expand_less' : 'expand_more');
+  };
+
+  // an instance button is lit while the sliders are on that instance's values
+  function syncInstances() {
+    (info.instances || []).forEach((ins, i) => {
+      const cb = $('#inst_' + i);
+      if (!cb) return;
+      cb.checked = info.axes.every(a => !(a.tag in ins.coords) ||
+        Math.abs(axisVals[a.tag] - ins.coords[a.tag]) <= ((a.max - a.min) > 10 ? 0.5001 : 0.0051));
+    });
+  }
+
+  function applyInstance(ins) {
+    info.axes.forEach(a => {
+      if (!(a.tag in ins.coords)) return;
+      const inp = $('#ax_' + cleanId(a.tag));
+      if (!inp) return;
+      inp.value = Math.min(a.max, Math.max(a.min, ins.coords[a.tag]));
+      inp.dispatchEvent(new Event('input'));
+    });
+    syncInstances();
+  }
+
+  function buildInstances() {
+    instBox.textContent = '';
+    const list = info.instances || [];
+    syncInstBtn();
+    if (!list.length) { hint(instBox, 'No named instances in this font'); return; }
+    list.forEach((ins, i) => {
+      const p = document.createElement('p'); p.className = 'font-slider';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'hidden'; cb.id = 'inst_' + i; cb.autocomplete = 'off';
+      cb.addEventListener('change', () => applyInstance(ins));
+      const lb = document.createElement('label');
+      lb.htmlFor = cb.id; lb.textContent = ins.name;
+      lb.title = Object.keys(ins.coords).map(t => t + ' ' + +ins.coords[t].toFixed(2)).join(', ');
+      p.append(cb, lb);
+      instBox.appendChild(p);
+    });
+    syncInstances();
+  }
+
+  instToggle.addEventListener('click', () => {
+    const before = secEl().scrollLeft;
+    const on = tab2Row.classList.toggle('instmode');
+    instToggle.classList.toggle('on', on);
+    syncInstBtn();
+    slideIn($(on ? '#instgroup' : '#axesgroup'));
+    on ? swapScroll('tab2', 'inst', before) : swapScroll('inst', 'tab2', before);
+    requestAnimationFrame(updateBubbles);   // sliders were hidden (width 0) while the value changed: place the numbers again
+  });
+
   function setInfo(i) {
     info = i;
     // OpenType choices (featOn) and variation values (axisGlobal) are global: they are kept when the font changes
     buildAxes();
+    buildInstances();
     buildFeatures();
     applyStyles();
   }
@@ -574,8 +684,10 @@
 
     if (T.fvar) {
       const d = T.fvar, off = d.getUint16(4), cnt = d.getUint16(8), sz = d.getUint16(10);
+      const allTags = [];   // all axes (also hidden ones): instance coordinates follow this order
       for (let i = 0; i < cnt; i++) {
         const o = off + i * sz;
+        allTags.push(tag4(d, o));
         if (d.getUint16(o + 16) & 1) continue; // hidden axis
         out.axes.push({
           tag: tag4(d, o),
@@ -585,6 +697,18 @@
           name: names(d.getUint16(o + 18))
         });
       }
+      // named instances
+      out.instances = [];
+      try {
+        const ic = d.getUint16(12), isz = d.getUint16(14), io = off + cnt * sz;
+        for (let i = 0; i < ic; i++) {
+          const o = io + i * isz;
+          if (o + 4 + cnt * 4 > d.byteLength) break;
+          const coords = {};
+          allTags.forEach((tg, k) => { coords[tg] = d.getInt32(o + 4 + k * 4) / 65536; });
+          out.instances.push({ name: names(d.getUint16(o)) || 'Instance ' + (i + 1), coords });
+        }
+      } catch (e) {}
     }
     const set = new Set();
     ['GSUB', 'GPOS'].forEach(t => { try { if (T[t]) featureTags(T[t]).forEach(x => set.add(x)); } catch (e) {} });
@@ -628,13 +752,13 @@
       // the fallback font has no file: no reload button and it can't be removed
       if (!r.system) {
         const rb = document.createElement('button');
-        rb.type = 'button'; rb.className = 'chipr'; rb.textContent = '↻'; rb.title = 'Reload';
+        rb.type = 'button'; rb.className = 'chipr'; rb.innerHTML = icn('refresh'); rb.title = 'Reload';
         rb.addEventListener('click', () => reloadFont(r));
         chip.appendChild(rb);
       }
       if (!r.system) {
         const xb = document.createElement('button');
-        xb.type = 'button'; xb.className = 'chipx'; xb.textContent = '×'; xb.title = 'Remove';
+        xb.type = 'button'; xb.className = 'chipx'; xb.innerHTML = icn('close'); xb.title = 'Remove';
         xb.addEventListener('click', () => removeFont(r));
         chip.appendChild(xb);
       } else nb.classList.add('nox');
@@ -742,7 +866,7 @@
       family, css: `"${family}", sans-serif`, face, file: fileName, name, version,
       metrics: measureMetrics(`"${family}"`, parsed && parsed.tab),
       info: parsed
-        ? { axes: parsed.axes, features: parsed.features, chars: parsed.chars, extra: parsed.extra, bases: parsed.bases, gids: parsed.gids, names: parsed.names }
+        ? { axes: parsed.axes, instances: parsed.instances, features: parsed.features, chars: parsed.chars, extra: parsed.extra, bases: parsed.bases, gids: parsed.gids, names: parsed.names }
         : { generic: true, axes: [], features: COMMON },
       status: parsed
         ? `${name}${version ? ' v' + version : ''}: ${parsed.axes.length} axes, ${parsed.features.length} features`
@@ -808,10 +932,11 @@
   // fixed round button next to the dark-mode button (always visible, whatever the tab or the number of fonts)
   const oldAuto = $('#autobtn'); if (oldAuto) oldAuto.remove();   // leftover from the previous version of index.html
   const autoBtn = document.createElement('button');
-  autoBtn.id = 'autobtn'; autoBtn.type = 'button'; autoBtn.textContent = '↻';
+  autoBtn.id = 'autobtn'; autoBtn.type = 'button'; autoBtn.innerHTML = icn('autorenew');
   document.body.appendChild(autoBtn);
   const syncAuto = () => {
     autoBtn.classList.toggle('on', autoOn);
+    autoBtn.innerHTML = icn(autoOn ? 'autorenew' : 'autorenew_off');
     autoBtn.title = 'Auto-reload fonts when their files change: ' + (autoOn ? 'ON' : 'OFF') + ' (click to toggle)';
   };
   syncAuto();
@@ -1007,6 +1132,332 @@
   });
   $('#outline').addEventListener('change', e => document.body.classList.toggle('outline', e.target.checked));
 
+  /* =================== Colors: a color set (text, background, accent, footer, button, box) per preset =================== */
+  // Every color of the interface comes from a set of 6 colors. Presets (like the default tests) are kept in this list and copied into
+  // localStorage on the first visit; items can be added, removed, exported and imported. Every item belongs to the "light" or the
+  // "dark" group; the list is always sorted: light group first, then dark, each A→Z.
+  // Not stored, but derived from these 6: --accent-bg (accent at 13%), the text colors on the footer / buttons / boxes / accent,
+  // the lines, the slider track, the hover colors and the selection color.
+  const COLOR_KEY = 'fft-colors';
+  const FIELDS = ['text', 'bg', 'accent', 'footer', 'chip', 'box'];
+  const FIELD_LABEL = { text: 'Text color', bg: 'Background color', accent: 'Accent color', footer: 'Footer color', chip: 'Button color', box: 'Box color' };
+  // The built-in colors of each mode (equal to the defaults in style.css)
+  const DEFAULT_THEME = {
+    light: { text: '#222222', bg: '#f6f6f6', accent: '#ff4242', footer: '#ffffff', chip: '#ececee', box: '#f0f0f0' },
+    dark:  { text: '#f5f5f5', bg: '#222222', accent: '#ff4242', footer: '#000000', chip: '#111111', box: '#2e2e2e' }
+  };
+  const PRESET_COLORS = [
+    { name: 'Light',    mode: 'light', ...DEFAULT_THEME.light },
+    { name: 'Material', mode: 'light', text: '#1d1b20', bg: '#fef7ff', accent: '#6750a4', footer: '#f3edf7', chip: '#e8def8', box: '#ece6f0' },
+    { name: 'Yellow',   mode: 'light', text: '#000000', bg: '#ede8e2', accent: '#000000', footer: '#efb11e', chip: '#efb11e', box: '#ede8e2' },
+    { name: 'Mint',     mode: 'light', text: '#1f3d2b', bg: '#e8f5ec', accent: '#2f9e5b', footer: '#dcefe2', chip: '#cfe7d8', box: '#d8ecdf' },
+    { name: 'Dark',     mode: 'dark',  ...DEFAULT_THEME.dark },
+    { name: 'Night',    mode: 'dark',  text: '#e6e6e6', bg: '#000000', accent: '#ffffff', footer: '#0a0a0a', chip: '#161616', box: '#1a1a1a' },
+    { name: 'Ocean',    mode: 'dark',  text: '#d6e6ff', bg: '#10233f', accent: '#4dabf7', footer: '#0b1a30', chip: '#17325a', box: '#173055' },
+    { name: 'Terminal', mode: 'dark',  text: '#33ff66', bg: '#0b0b0b', accent: '#33ff66', footer: '#000000', chip: '#0f1f12', box: '#0f1a11' }
+  ];
+  // The main colors of the page: one set for light mode, one for dark mode. The dark-mode button switches between them.
+  // "Set to light/dark mode" replaces them (saved in localStorage and in the backup file).
+  const THEME_KEY = 'fft-themecolors';
+
+  const hexOk = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v.trim());
+  const isDarkHex = h => {
+    const n = parseInt(h.slice(1), 16);
+    return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 < 0.5;
+  };
+  const normHex = v => {
+    v = (v || '').trim().toLowerCase().replace(/^#/, '');
+    if (/^[0-9a-f]{3}$/.test(v)) v = v.replace(/./g, '$&$&');
+    return /^[0-9a-f]{6}$/.test(v) ? '#' + v : '';
+  };
+  const hx2 = n => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
+  const mixHex = (a, b, t) => {
+    const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(a), B = p(b);
+    return '#' + A.map((v, i) => hx2(v + (B[i] - v) * t)).join('');
+  };
+  // the 6 colors of c (a missing or invalid one takes the built-in value of the mode); null when text or background are unusable
+  const fillColors = (c, mode) => {
+    if (!c || !hexOk(c.text) || !hexOk(c.bg)) return null;
+    const o = {};
+    FIELDS.forEach(k => { o[k] = hexOk(c[k]) ? c[k].trim().toLowerCase() : DEFAULT_THEME[mode][k]; });
+    return o;
+  };
+  const validColor = c => c && typeof c.name === 'string' && c.name.trim() && hexOk(c.text) && hexOk(c.bg);
+  // an item without a (valid) mode goes to the group that fits its background
+  const cleanColor = c => {
+    const mode = c.mode === 'light' || c.mode === 'dark' ? c.mode : (isDarkHex(c.bg.trim()) ? 'dark' : 'light');
+    return { name: c.name.trim().slice(0, 40), mode, ...fillColors(c, mode) };
+  };
+  const colorEq = (a, b) => FIELDS.every(k => a[k] === b[k]);
+  const sortColors = () => colors.sort((a, b) =>
+    (a.mode === b.mode ? 0 : a.mode === 'light' ? -1 : 1) ||
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
+  let colors = [];
+  let colorStored = null;
+  try { colorStored = JSON.parse(localStorage.getItem(COLOR_KEY)); } catch (e) {}
+  const saveColors = () => { try { localStorage.setItem(COLOR_KEY, JSON.stringify(colors)); } catch (e) {} };
+  if (Array.isArray(colorStored)) {
+    // a list saved by an older version has only text + background: built-in presets are refreshed with their full 6-color
+    // set (otherwise they would keep default accent / footer / button / box colors); your own items keep what they have
+    colors = colorStored.filter(validColor).map(c => {
+      const old = !FIELDS.every(k => hexOk(c[k]));
+      return cleanColor((old && PRESET_COLORS.find(p => p.name === c.name)) || c);
+    });
+  }
+  else { colors = PRESET_COLORS.map(cleanColor); saveColors(); }
+  // One-time repair: version 1.9 saved old 2-color presets with the 4 new colors filled in by the defaults, so they looked "complete".
+  // Built-in presets whose accent / footer / button / box are still exactly those defaults get their real colors back (once).
+  const COLOR_VER_KEY = 'fft-colors-ver';
+  let colorVer = '';
+  try { colorVer = localStorage.getItem(COLOR_VER_KEY) || ''; } catch (e) {}
+  if (colorVer !== '2') {
+    const NEW = ['accent', 'footer', 'chip', 'box'];
+    colors.forEach(c => {
+      const p = PRESET_COLORS.find(x => x.name === c.name && x.mode === c.mode);
+      if (p && NEW.every(k => c[k] === DEFAULT_THEME[c.mode][k])) NEW.forEach(k => { c[k] = p[k]; });
+    });
+    try { localStorage.setItem(COLOR_VER_KEY, '2'); } catch (e) {}
+  }
+  // "Light" and "Dark" can't be removed: if a stored list lacks them they are added back
+  const isCoreColor = c => (c.name === 'Light' && c.mode === 'light') || (c.name === 'Dark' && c.mode === 'dark');
+  PRESET_COLORS.filter(isCoreColor).forEach(p => { if (!colors.some(x => x.name === p.name && x.mode === p.mode)) colors.push(cleanColor(p)); });
+  saveColors();
+
+  const themeColors = { light: { ...DEFAULT_THEME.light }, dark: { ...DEFAULT_THEME.dark } };
+  try {
+    const t = JSON.parse(localStorage.getItem(THEME_KEY));
+    if (t) ['light', 'dark'].forEach(k => { const f = fillColors(t[k], k); if (f) themeColors[k] = f; });
+  } catch (e) {}
+  const saveTheme = () => { try { localStorage.setItem(THEME_KEY, JSON.stringify(themeColors)); } catch (e) {} };
+
+  const INP = { text: $('#txtcolor'), bg: $('#bgcolor'), accent: $('#acccolor'), footer: $('#footcolor'), chip: $('#chipcolor'), box: $('#boxcolor') };
+  const colorListEl = $('#colorlist');
+  const readInputs = () => { const o = {}; FIELDS.forEach(k => { o[k] = INP[k].value.toLowerCase(); }); return o; };
+  const curMode = () => document.body.classList.contains('darkmode') ? 'dark' : 'light';
+  let flipping = false;   // true while a color change itself switches dark mode (the main colors must not be re-applied then)
+
+  // Applies a color set: the 6 colors and everything derived from them become CSS variables on <body> (style.css uses only these).
+  function paint(c) {
+    FIELDS.forEach(k => { INP[k].value = c[k]; });
+    const ffg = isDarkHex(c.footer) ? '#f5f5f5' : '#222222';
+    const cfg = isDarkHex(c.chip) ? '#aaaaaa' : '#222222';
+    const vars = {
+      '--text': c.text, '--bg': c.bg,
+      '--accent': c.accent, '--accent-bg': c.accent + '22', '--on-accent': isDarkHex(c.accent) ? '#ffffff' : '#000000',
+      '--selection': mixHex(c.accent, '#ffffff', 0.33),
+      '--footer': c.footer, '--footer-fg': ffg, '--nav-fg': ffg + '77',
+      '--line': mixHex(c.footer, ffg, 0.35), '--track': mixHex(c.footer, ffg, 0.2),
+      '--chip': c.chip, '--chip-fg': cfg, '--chip-hover': mixHex(c.chip, cfg, 0.12),
+      '--box': c.box, '--box-fg': isDarkHex(c.box) ? '#f5f5f5' : '#222222'
+    };
+    Object.keys(vars).forEach(k => document.body.style.setProperty(k, vars[k]));
+    document.documentElement.style.backgroundColor = c.bg;
+    colorLine = 'color: ' + c.text + '; background-color: ' + c.bg + ';';
+    const d = DEFAULT_THEME[curMode()];
+    colorCss = c.text !== d.text || c.bg !== d.bg ? 'color: ' + c.text + '; background-color: ' + c.bg + ';' : '';
+    applyStyles();
+    renderColors();
+  }
+  // switch the whole UI to dark / light mode without re-applying the main colors
+  function forceDark(dark) {
+    if (neg.checked === dark) return;
+    flipping = true; neg.checked = dark; neg.dispatchEvent(new Event('change')); flipping = false;
+  }
+  // a chosen color set: a dark background switches the UI to dark mode, a light one to light mode
+  function setColors(c) { forceDark(isDarkHex(c.bg)); paint(c); }
+  const applyThemeColors = () => paint(themeColors[curMode()]);
+  FIELDS.forEach(k => INP[k].addEventListener('input', () => setColors(readInputs())));
+  // the dark-mode button: back to the main colors of the mode it switches to
+  neg.addEventListener('change', () => { if (!flipping) applyThemeColors(); });
+
+  const ICON = { light: icn('light_mode'), dark: icn('dark_mode') };
+
+  function renderColors() {
+    sortColors();
+    colorListEl.textContent = '';
+    const cur = readInputs();
+    ['light', 'dark'].forEach(mode => {
+      const box = document.createElement('span');
+      box.className = 'cgroupbox ' + mode;
+      box.title = (mode === 'light' ? 'Light' : 'Dark') + ' mode colors';
+      const ic = document.createElement('span');
+      ic.className = 'cgicon'; ic.innerHTML = ICON[mode];   // static markup
+      box.appendChild(ic);
+      colors.filter(c => c.mode === mode).forEach(c => {
+        const chip = document.createElement('span');
+        chip.className = 'chip cchip' + (colorEq(c, cur) ? ' active' : '');
+        // the chip shows the text + background colors of the preset
+        chip.style.background = c.bg; chip.style.color = c.text;
+        const nb = document.createElement('button');
+        nb.type = 'button'; nb.className = 'chipname';
+        nb.textContent = shorten(c.name, CHIP_MAX);
+        nb.title = c.name + ' (' + mode + ' mode)\n' + FIELDS.map(k => FIELD_LABEL[k].replace(' color', '') + ' ' + c[k]).join(' · ');
+        nb.addEventListener('click', () => setColors(c));
+        chip.appendChild(nb);
+        const eb = document.createElement('button');
+        eb.type = 'button'; eb.className = 'chipe' + (isCoreColor(c) ? ' last' : '');
+        eb.innerHTML = icn('edit'); eb.title = 'Edit';
+        eb.addEventListener('click', () => openColorModal(c));
+        chip.appendChild(eb);
+        if (!isCoreColor(c)) {   // Light / Dark: no remove button
+          const xb = document.createElement('button');
+          xb.type = 'button'; xb.className = 'chipx'; xb.innerHTML = icn('close'); xb.title = 'Remove';
+          xb.addEventListener('click', () => { colors.splice(colors.indexOf(c), 1); saveColors(); renderColors(); });
+          chip.appendChild(xb);
+        }
+        box.appendChild(chip);
+      });
+      colorListEl.appendChild(box);
+    });
+  }
+
+  // Set to light / dark mode: the colors on screen (the selected preset) become the main colors of that mode
+  function setThemeMode(mode) {
+    themeColors[mode] = readInputs();
+    saveTheme();
+    if (curMode() === mode) applyThemeColors();
+    flash(mode === 'dark' ? 'Dark set' : 'Light set');
+  }
+  $('#colorlight').addEventListener('click', () => setThemeMode('light'));
+  $('#colordark').addEventListener('click', () => setThemeMode('dark'));
+
+  // restore: missing built-in colors come back and the list is sorted again (light group, then dark, A→Z)
+  $('#colorreset').addEventListener('click', () => {
+    const miss = PRESET_COLORS.filter(p => !colors.some(c => c.name === p.name && c.mode === p.mode));
+    if (!miss.length) { flash('Nothing missing'); return; }
+    colors.push(...miss.map(cleanColor));
+    saveColors(); renderColors();
+    flash(miss.length + ' restored');
+  });
+
+  // import: same name + same mode → updated if different, otherwise skipped; new ones are added. Returns how many changed.
+  function mergeColors(list) {
+    let n = 0;
+    list.filter(validColor).map(cleanColor).forEach(c => {
+      const ex = colors.find(x => x.name === c.name && x.mode === c.mode);
+      if (ex) {
+        if (colorEq(ex, c)) return;
+        FIELDS.forEach(k => { ex[k] = c[k]; });
+      } else colors.push(c);
+      n++;
+    });
+    if (n) { saveColors(); renderColors(); }
+    return n;
+  }
+
+  /* --- "add color" dialog (name + the 6 colors, each with hex code and color picker) --- */
+  const cmodal = document.createElement('div');
+  cmodal.id = 'colormodal';
+  cmodal.innerHTML =
+    '<div class="tm-card">' +
+      '<label for="cmname">Name</label>' +
+      '<input id="cmname" type="text" dir="auto" autocomplete="off" maxlength="40">' +
+      FIELDS.map(k =>
+        '<label for="cm_' + k + '">' + FIELD_LABEL[k] + '</label>' +
+        '<div class="tm-color"><input id="cm_' + k + '" type="text" dir="ltr" maxlength="7" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="#rrggbb">' +
+        '<input id="cm_' + k + 'pick" type="color"></div>').join('') +
+      '<div id="cmprev">Aa — sample text نمونه</div>' +
+      '<label for="cmmode">Group</label>' +
+      '<select id="cmmode"><option value="light">Light mode</option><option value="dark">Dark mode</option></select>' +
+      '<div class="tm-actions">' +
+        '<button type="button" class="btn" id="cmcancel">Cancel</button>' +
+        '<button type="button" class="btn primary" id="cmsave">Save</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(cmodal);
+  const cmName = $('#cmname'), cmPrev = $('#cmprev'), cmMode = $('#cmmode');
+  const CM = {};
+  FIELDS.forEach(k => { CM[k] = { t: $('#cm_' + k), p: $('#cm_' + k + 'pick') }; });
+  let cmPrevState = null, cmModeTouched = false, cmEditing = null;   // cmEditing: the color item being edited (null = adding a new one)
+
+  // every change here is applied to the page at once, so you see the colors you are adding
+  function cmLive() {
+    const c = {};
+    FIELDS.forEach(k => { c[k] = normHex(CM[k].t.value) || INP[k].value.toLowerCase(); });
+    setColors(c);
+    cmPrev.style.color = c.text; cmPrev.style.background = c.bg; cmPrev.style.borderBottom = '4px solid ' + c.accent;
+    if (!cmModeTouched) cmMode.value = isDarkHex(c.bg) ? 'dark' : 'light';
+  }
+  FIELDS.forEach(k => {
+    CM[k].t.addEventListener('input', () => { const h = normHex(CM[k].t.value); if (h) CM[k].p.value = h; cmLive(); });
+    CM[k].p.addEventListener('input', () => { CM[k].t.value = CM[k].p.value; cmLive(); });
+  });
+  cmMode.addEventListener('change', () => { cmModeTouched = true; });
+
+  function openColorModal(edit) {
+    const c = readInputs();
+    cmPrevState = { colors: c, dark: neg.checked };   // what comes back on Cancel
+    cmEditing = edit || null;
+    if (edit) {
+      cmName.value = edit.name;
+      FIELDS.forEach(k => { CM[k].t.value = CM[k].p.value = edit[k]; });
+      cmMode.value = edit.mode;
+      cmModeTouched = true;
+      // Light / Dark are built in: their name and group stay fixed
+      cmName.disabled = cmMode.disabled = isCoreColor(edit);
+      setColors(edit);   // show the colors being edited right away
+    } else {
+      cmName.value = '';
+      FIELDS.forEach(k => { CM[k].t.value = CM[k].p.value = c[k]; });
+      cmModeTouched = false;
+      cmMode.value = isDarkHex(c.bg) ? 'dark' : 'light';
+      cmName.disabled = cmMode.disabled = false;
+    }
+    const s = edit || c;
+    cmPrev.style.fontFamily = target.style.fontFamily || 'inherit';
+    cmPrev.style.color = s.text; cmPrev.style.background = s.bg; cmPrev.style.borderBottom = '4px solid ' + s.accent;
+    cmodal.classList.add('open');
+    if (!cmName.disabled) cmName.focus();
+  }
+  // cancel: the colors (and mode) from before the dialog come back
+  function cancelColorModal() {
+    if (!cmodal.classList.contains('open')) return;
+    cmodal.classList.remove('open');
+    cmEditing = null;
+    if (cmPrevState) { forceDark(cmPrevState.dark); paint(cmPrevState.colors); }
+  }
+  function saveColorModal() {
+    const c = {};
+    for (const k of FIELDS) {
+      c[k] = normHex(CM[k].t.value);
+      if (!c[k]) { flashErr(CM[k].t); return; }
+    }
+    const mode = cmMode.value;
+    const name = cmName.value.trim() || c.text + ' on ' + c.bg;
+    if (cmEditing) {
+      // another item with the same name in the same group would be ambiguous
+      if (colors.some(x => x !== cmEditing && x.name === name && x.mode === mode)) { flashErr(cmName); return; }
+      if (!isCoreColor(cmEditing)) { cmEditing.name = name.slice(0, 40); cmEditing.mode = mode; }
+      FIELDS.forEach(k => { cmEditing[k] = c[k]; });
+      cmEditing = null;
+    } else {
+      const ex = colors.find(x => x.name === name && x.mode === mode);
+      if (ex) FIELDS.forEach(k => { ex[k] = c[k]; }); else colors.push(cleanColor({ name, mode, ...c }));
+    }
+    saveColors();
+    cmodal.classList.remove('open');
+    paint(c);
+  }
+  $('#coloradd').addEventListener('click', () => openColorModal());
+  $('#cmcancel').addEventListener('click', cancelColorModal);
+  $('#cmsave').addEventListener('click', saveColorModal);
+  cmodal.addEventListener('mousedown', e => { if (e.target === cmodal) cancelColorModal(); });
+  cmName.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); CM.text.t.focus(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cancelColorModal(); });
+  // Layout Colors button: swaps the normal Layout controls for the color settings
+  const colorToggle = $('#colortoggle');
+  colorToggle.addEventListener('click', () => {
+    const before = secEl().scrollLeft;
+    const on = $('.pc-tab section .tab1').classList.toggle('colormode');
+    colorToggle.classList.toggle('on', on);
+    setBtn(colorToggle, on ? 'Back' : 'Layout Colors', on ? 'expand_less' : 'expand_more');
+    slideIn($(on ? '#colorgroup' : '#layoutbasic'));
+    updateT3();
+    on ? swapScroll('tab1', 'colors', before) : swapScroll('colors', 'tab1', before);
+    requestAnimationFrame(updateBubbles);
+  });
+  renderColors();
+
   /* =================== Text box helpers =================== */
   // Two separate text boxes: #Test (tests) and #Wiki (Wikipedia article). They never mix.
   const testBox = $('#Test');
@@ -1024,15 +1475,25 @@
   let viewWiki = false, viewGlyph = false;   // which box is on screen
   let wikiOn = false, glyphOn = false;       // Wiki / Whole characters buttons in the Test tab (never both on)
   const wikiToggle = $('#wikitoggle'), glyphToggle = $('#glyphtoggle');
+  let modeNow = 'test';
   function setMode(m) {
+    const before = secEl().scrollLeft;
+    const changed = m !== modeNow, prevMode = modeNow;
+    modeNow = m;
     wikiOn = viewWiki = m === 'wiki';
     glyphOn = viewGlyph = m === 'glyph';
     tab6El.classList.toggle('wikimode', wikiOn);
     tab6El.classList.toggle('glyphmode', glyphOn);
     wikiToggle.classList.toggle('on', wikiOn);
     glyphToggle.classList.toggle('on', glyphOn);
+    setBtn(wikiToggle, wikiOn ? 'Back' : 'Wiki', wikiOn ? 'expand_less' : 'expand_more');
+    setBtn(glyphToggle, glyphOn ? 'Back' : 'Glyph List', glyphOn ? 'expand_less' : 'expand_more');
     if (glyphOn) renderGlyphs();
     syncView();
+    if (changed) {
+      slideIn($(wikiOn ? '#wikigroup' : glyphOn ? '#glyphgroup' : '#testgroup'));
+      swapScroll(prevMode === 'test' ? 'tab6' : prevMode, m === 'test' ? 'tab6' : m, before);
+    }
   }
   const setWikiMode = on => setMode(on ? 'wiki' : 'test');
   wikiToggle.addEventListener('click', () => { setWikiMode(!wikiOn); updateAbout(); });
@@ -1834,7 +2295,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   function renderTests() {
     sortTests();
     testListEl.textContent = '';
-    if (!tests.length) hint(testListEl, 'No tests — press + or ↺');
+    if (!tests.length) hint(testListEl, 'No tests — add one or restore the built-in ones');
     tests.forEach(t => {
       const chip = document.createElement('span');
       chip.className = 'chip' + (t === activeTest ? ' active' : '');
@@ -1843,7 +2304,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       nb.textContent = shorten(t.name, CHIP_MAX); nb.title = t.name;
       nb.addEventListener('click', () => showTest(t));
       const xb = document.createElement('button');
-      xb.type = 'button'; xb.className = 'chipx'; xb.textContent = '×'; xb.title = 'Remove';
+      xb.type = 'button'; xb.className = 'chipx'; xb.innerHTML = icn('close'); xb.title = 'Remove';
       xb.addEventListener('click', () => {
         tests.splice(tests.indexOf(t), 1);
         if (activeTest === t) { activeTest = null; updateAbout(); }
@@ -1858,15 +2319,15 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   const dangerZone = $('#dangerzone');
   const mkBtn = (txt, title, parent) => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'btn'; b.textContent = txt; b.title = title;
+    b.type = 'button'; b.className = 'btn'; b.innerHTML = icn(txt); b.title = title;
     (parent || $('#testgroup')).insertBefore(b, parent ? null : dangerZone);
     return b;
   };
-  const importBtn  = mkBtn('📂', 'Import a backup file (tests and features are added, settings are applied)');
-  const exportBtn  = mkBtn('⬇', 'Export a backup file: tests, your OpenType features and settings (fft-backup.json)');
+  const importBtn  = mkBtn('folder_open', 'Import a backup file (tests, features and colors are added, settings are applied)');
+  const exportBtn  = mkBtn('download', 'Export a backup file: tests, colors, your OpenType features and settings (fft-backup.json)');
   // danger zone (separate, at the end of the row): restore built-in tests, purge local storage
-  const restoreBtn = mkBtn('↺', 'Danger zone: add back the built-in tests that are missing', dangerZone);
-  const purgeBtn   = mkBtn('🗑', 'Danger zone: purge local storage (delete everything FFT saved in this browser)', dangerZone);
+  const restoreBtn = mkBtn('restart_alt', 'Danger zone: add back the built-in tests that are missing', dangerZone);
+  const purgeBtn   = mkBtn('delete', 'Danger zone: purge local storage (delete everything FFT saved in this browser)', dangerZone);
   restoreBtn.classList.add('danger'); purgeBtn.classList.add('danger');
 
   exportBtn.addEventListener('click', () => {
@@ -1879,8 +2340,8 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       return o;
     });
     const feats = customFeats.map(f => ({ tag: f.tag, on: f.on }));
-    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase() };
-    const data = JSON.stringify({ app: 'FFT', version: 1, settings, tests: out, features: feats }, null, 2);
+    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors };
+    const data = JSON.stringify({ app: 'FFT', version: 1, settings, tests: out, features: feats, colors: colors.map(cleanColor) }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
     const a = document.createElement('a');
     a.href = url; a.download = 'fft-backup.json';
@@ -1923,18 +2384,28 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       renderWikiLangs();
       n++;
     }
+    if (st.themeColors && typeof st.themeColors === 'object') {
+      ['light', 'dark'].forEach(k => {
+        const t = st.themeColors[k];
+        const f = fillColors(t, k);
+        if (f) { themeColors[k] = f; n++; }
+      });
+      saveTheme();
+    }
+    if (typeof st.dark === 'boolean' || st.themeColors) applyThemeColors();
     return n;
   }
 
   // Merge: add new tests, skip duplicates (same name + same text). Only "name", "text", "about", "author" and "link" are read.
   async function importTests(file) {
-    let list, feats = [], settings = null;
+    let list, feats = [], cols = [], settings = null;
     try {
       const j = JSON.parse(await file.text());
       if (Array.isArray(j)) list = j;                       // older files: just an array of tests
       else if (j && typeof j === 'object') {
         list = Array.isArray(j.tests) ? j.tests : [];
         feats = Array.isArray(j.features) ? j.features : [];
+        cols = Array.isArray(j.colors) ? j.colors : [];
         if (j.settings && typeof j.settings === 'object') settings = j.settings;
       } else throw new Error('bad shape');
     } catch (e) { flash('Bad file'); return; }
@@ -1960,12 +2431,13 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       if (customFeats.some(c => c.tag === f.tag)) return;
       putCustom(f.tag, f.on !== false); fAdded++;
     });
+    const cAdded = mergeColors(cols);
     if (added) saveTests();
     if (fAdded) { buildFeatures(); applyStyles(); }
     const sApplied = settings ? applySettings(settings) : 0;
     renderTests();
     updateAbout();
-    flash(added + ' added' + (skipped ? ', ' + skipped + ' skipped' : '') + (fAdded ? ', ' + fAdded + ' features' : '') + (sApplied ? ', settings' : ''));
+    flash(added + ' added' + (skipped ? ', ' + skipped + ' skipped' : '') + (fAdded ? ', ' + fAdded + ' features' : '') + (cAdded ? ', ' + cAdded + ' colors' : '') + (sApplied ? ', settings' : ''));
   }
 
   const testFileIn = document.createElement('input');
@@ -2302,15 +2774,24 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   // the sticky "↻ all / × all" group gets its shadow once the row has been scrolled
   section.addEventListener('scroll', () => $('.tab5').classList.toggle('scrolled', section.scrollLeft > 0), { passive: true });
 
-  /* Hover on a tab title acts like a click (mouse devices only) */
-  if (window.matchMedia('(hover: hover)').matches) {
-    document.querySelectorAll('.pc-tab nav label').forEach(lb => {
-      lb.addEventListener('mouseenter', () => {
-        const tab = document.getElementById(lb.htmlFor);
-        if (tab && !tab.checked) tab.click();
-      });
-    });
-  }
+  /* Tabs open with a click. While the mouse is over the footer, the Left / Right arrow keys move between the tabs
+     (in the order they are shown: Font, Layout, Test, Variation, OpenType, About). */
+  const footerEl = $('footer');
+  let overFooter = false;
+  footerEl.addEventListener('mouseenter', () => { overFooter = true; });
+  footerEl.addEventListener('mouseleave', () => { overFooter = false; });
+  const TAB_ORDER = ['tab5', 'tab1', 'tab6', 'tab2', 'tab3', 'tab4'];
+  document.addEventListener('keydown', e => {
+    if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !overFooter || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    const t = e.target;
+    // never while typing: text fields, the editable text box, dialogs
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.type !== 'range' && t.type !== 'radio' && t.type !== 'checkbox' && t.type !== 'color')) return;
+    if (document.querySelector('#testmodal.open, #colormodal.open')) return;
+    const cur = TAB_ORDER.findIndex(id => document.getElementById(id).checked);
+    const next = Math.min(TAB_ORDER.length - 1, Math.max(0, cur + (e.key === 'ArrowRight' ? 1 : -1)));
+    e.preventDefault();   // also stops a focused slider / radio from reacting to the arrow
+    if (next !== cur) document.getElementById(TAB_ORDER[next]).click();
+  });
 
   /* =================== Mouse drag-to-scroll (footer section) =================== */
   (() => {
@@ -2353,12 +2834,68 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     section.addEventListener('dragstart', e => e.preventDefault());
   })();
 
+  /* =================== Global back bar (top of the footer) =================== */
+  // In a sub-menu (Layout Colors, Instances, Wiki, Glyph List) a thin full-width bar with a down arrow appears at the top
+  // of the footer; one click goes back to the normal row of that tab.
+  const footBar = $('footer');
+  const backBar = document.createElement('button');
+  backBar.id = 'backbar'; backBar.type = 'button'; backBar.innerHTML = icn('expand_more'); backBar.title = 'Back';
+  footBar.appendChild(backBar);
+  const tabRowIn = (id) => {
+    if (id === 'tab1') return $('.pc-tab section .tab1').classList.contains('colormode') ? colorToggle : null;
+    if (id === 'tab2') return tab2Row.classList.contains('instmode') ? instToggle : null;
+    if (id === 'tab6') return wikiOn ? wikiToggle : glyphOn ? glyphToggle : null;
+    return null;
+  };
+  const checkedTab = () => ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].find(id => document.getElementById(id).checked);
+  const syncBack = () => footBar.classList.toggle('submenu', !!tabRowIn(checkedTab()));
+  const subGroup = id => id === 'tab1' ? $('#colorgroup') : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');
+  // back: the open sub-menu slides down and away, then the normal row of the tab comes back
+  backBar.addEventListener('click', () => {
+    if (backing) return;
+    const id = checkedTab(), b = tabRowIn(id), g = subGroup(id);
+    if (!b) return;
+    backing = true;
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      g.classList.remove('slideout');
+      b.click();
+      setTimeout(() => { backing = false; }, 60);
+    };
+    g.classList.add('slideout');
+    g.addEventListener('animationend', go, { once: true });
+    setTimeout(go, 320);   // safety net if the animation event never comes
+  });
+  ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].forEach(id => document.getElementById(id).addEventListener('change', syncBack));
+  // touch: dragging down on the footer inside a sub-menu goes back (same as tapping the bar)
+  {
+    let tracking = false, sx = 0, sy = 0;
+    footBar.addEventListener('touchstart', e => {
+      tracking = false;
+      if (!footBar.classList.contains('submenu') || e.touches.length !== 1) return;
+      if (e.target.closest('input[type=range]')) return;
+      tracking = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    }, { passive: true });
+    footBar.addEventListener('touchmove', e => {
+      if (!tracking) return;
+      const dy = e.touches[0].clientY - sy, dx = e.touches[0].clientX - sx;
+      if (dy > 22 && dy > Math.abs(dx) * 1.5) { tracking = false; backBar.click(); }
+    }, { passive: true });
+    ['touchend', 'touchcancel'].forEach(t => footBar.addEventListener(t, () => { tracking = false; }, { passive: true }));
+  }
+  const modeObs = new MutationObserver(syncBack);
+  ['.tab1', '.tab2', '.tab6'].forEach(q => modeObs.observe($('.pc-tab section ' + q), { attributes: true, attributeFilter: ['class'] }));
+  syncBack();
+
   /* =================== Init =================== */
   // Always start on the Font tab (browsers may restore the old radio state on refresh)
   $('#tab5').checked = true;
   section.scrollLeft = 0;
 
   addSystemFont();
+  applyThemeColors();
   renderTests();
   {
     let last = '';
