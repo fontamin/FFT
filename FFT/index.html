@@ -7,8 +7,8 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Fontamin Font Tester</title>
-      <link rel="stylesheet" href="style.css?v=1.4">
-      <script src="script.js?v=1.4" defer></script>
+      <link rel="stylesheet" href="style.css?v=1.5">
+      <script src="script.js?v=1.5" defer></script>
    </head>
    <body spellcheck="false">
       <script>try{if(localStorage.getItem("fft-dark")==="1")document.body.classList.add("darkmode")}catch(e){}</script>
@@ -60,6 +60,7 @@
                   </p>
                   <div class="aligns" role="radiogroup" aria-label="Text alignment">
                      <input class="hidden" type="radio" name="align" id="alright" value="right" autocomplete="off"><label for="alright" title="Align right (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21h18v-2H3v2zm6-4h12v-2H9v2zm-6-4h18v-2H3v2zm6-4h12V7H9v2zM3 3v2h18V3H3z"/></svg></label>
+                     <input class="hidden" type="radio" name="align" id="alcenter" value="center" autocomplete="off"><label for="alcenter" title="Align center (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 15v2h10v-2H7zm-4 6h18v-2H3v2zm0-8h18v-2H3v2zm4-6v2h10V7H7zM3 3v2h18V3H3z"/></svg></label>
                      <input class="hidden" type="radio" name="align" id="alleft" value="left" autocomplete="off"><label for="alleft" title="Align left (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/></svg></label>
                      <input class="hidden" type="radio" name="align" id="aljustify" value="justify" autocomplete="off"><label for="aljustify" title="Justify (click again to go back to the text's own alignment)"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 21h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V7H3v2zm0-6v2h18V3H3z"/></svg></label>
                   </div>
@@ -67,6 +68,23 @@
                   <p class="font-slider"><input class="hidden" type="checkbox" id="guidetoggle" autocomplete="off"><label for="guidetoggle" title="Show ascender, descender, x-height and cap-height lines">Guides</label></p>
                   </div>
                   <div id="colorgroup">
+                  <div class="ugroup">
+                     <span class="stepper" title="UI scale: every click changes it by one small step (about 3%)">
+                        <label>Scale:</label>
+                        <button type="button" id="scaleminus" class="btn" title="Smaller"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13H5v-2h14v2z"/></svg></button>
+                        <b id="scaleval">1x</b>
+                        <button type="button" id="scaleplus" class="btn" title="Larger"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+                     </span>
+                     <button type="button" id="scalereset" class="btn" title="Reset scale to 1x">1x</button>
+                  </div>
+                  <span class="vsep" aria-hidden="true"></span>
+                  <span class="stepper" title="Number of footer rows: with more rows the items of a tab fill them from the top down">
+                     <label>Rows:</label>
+                     <button type="button" id="rowsminus" class="btn" title="Fewer rows"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13H5v-2h14v2z"/></svg></button>
+                     <b id="rowsval">1</b>
+                     <button type="button" id="rowsplus" class="btn" title="More rows"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+                  </span>
+                  <span class="vsep" aria-hidden="true"></span>
                   <label class="colorpick" title="Text color"><span>Text Color</span><input type="color" id="txtcolor" value="#222222"></label>
                   <label class="colorpick" title="Page background color (a dark color switches the interface to dark mode)"><span>Background Color</span><input type="color" id="bgcolor" value="#f6f6f6"></label>
                   <label class="colorpick" title="Accent color: tab dots, slider thumbs, active items, guides, hover highlights"><span>Accent Color</span><input type="color" id="acccolor" value="#ff4242"></label>
@@ -79,7 +97,7 @@
                   <button type="button" id="coloradd" class="btn" title="Add a new color pair to the list"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
                   <button type="button" id="colorreset" class="btn" title="Add back the built-in colors that are missing"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/></svg></button>
                   </div>
-                  <button type="button" id="colortoggle" class="btn outline" title="Show / hide the color settings">Layout Colors<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
+                  <button type="button" id="colortoggle" class="btn outline" title="Show / hide the layout settings">Layout Settings<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg></button>
                   <p class="right-side-header" id="text3"></p>
                </div>
                <div class="tab2">
@@ -88,7 +106,7 @@
                      <div id="axes"></div>
                   </div>
                   <div id="instgroup"><div id="instances"></div></div>
-                  <button type="button" id="insttoggle" class="btn outline" title="Show the named instances of this font">Instances<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
+                  <button type="button" id="insttoggle" class="btn outline" title="Show the named instances of this font">Instances<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg></button>
                   <p class="right-side-header" id="text1"></p>
                </div>
                <div class="tab3">
@@ -104,7 +122,7 @@
                <div class="tab4">
                   <div style="direction:ltr;text-align:center;">
                      <a href="https://fontamin.com/" target="_blank"><svg class="fontamin-logo" viewBox="0 0 35.166 35.957" role="img" aria-label="Fontamin"><g transform="matrix(0.1808294,0,0,0.1808294,-41.132058,-16.305489)" fill="none"><g transform="matrix(5.4557778,0,0,5.4557778,228.76969,91.506299)" fill="none" stroke="currentColor" stroke-width="1.45488"><path d="m 27.879766,22.664017 c -3.617537,0.442468 -7.048319,0.531094 -10.501202,0.534409 -3.638092,0 -6.705308,-0.218802 -8.643148,-0.888471 C 6.979691,21.702833 6.391134,20.560196 6.413014,18.826572 6.437324,16.8642 6.716023,15.750958 7.185896,14.04275 L 1.013229,12.867846 C 1.119315,9.102672 2.120061,6.0118074 4.33262,4.1818214 6.665853,2.2517166 10.433678,1.205442 15.989941,1.3113071 c 0.957428,0 1.94005,0.061884 3.412437,0.1989116 l 0.320027,0.828798 c -3.004227,2.7739317 -4.826478,7.7869433 -4.826478,12.8631663 0,2.561097 0.564025,4.55861 1.88303,5.918723 1.319224,1.360333 3.301709,1.96613 5.821918,1.96613"/><path d="m 26.550816,1.6264714 c 5.366854,3.1184906 7.68373,8.1891876 7.68373,17.0204166 0,6.391912 -1.233692,10.306932 -3.945519,12.678179 -2.711827,2.371025 -7.118601,3.328011 -13.726884,3.328011 -4.721939,0 -8.677626,-0.806255 -11.378844,-2.615908 C 2.48208,30.227738 0.931454,27.463531 0.931454,23.110463"/></g><path d="m 354.8169,172.22339 c -7.07566,0 -11.16632,-3.82229 -11.16632,-9.70471 0,-9.74509 5.09183,-16.28121 13.32217,-16.28121 9.62156,0 14.92291,8.70534 16.78924,24.01638 -6.0792,1.30593 -11.49491,1.96954 -18.94509,1.96954 z" fill="none" stroke="currentColor" stroke-width="7.9375" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4"/></g></svg></a>
-                     FFT(Fontamin Font Tester) - v1.2<br>
+                     FFT(Fontamin Font Tester) - v1.3<br>
                      Loaded fonts are not saved. Refresh clears them.
                   </div>
                </div>
@@ -133,8 +151,8 @@
                      <p class="status" id="wikistatus"></p>
                   </div>
                   <div id="glyphgroup"><input class="hidden" type="checkbox" id="gshowuni" autocomplete="off"><label class="outline" for="gshowuni" title="Show the Unicode value under each glyph">Unicode Values</label><input class="hidden" type="checkbox" id="gshownames" autocomplete="off"><label class="outline" for="gshownames" title="Show the glyph name under each glyph (a #number if the font has no names)">Names</label><button type="button" id="glyphcopy" class="btn outline" title="Copy all characters of this font">Copy all</button></div>
-                  <button type="button" id="wikitoggle" class="btn outline" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
-                  <button type="button" id="glyphtoggle" class="btn outline" title="Show every character the font has (read from its cmap table) + glyphs without unicode values from OpenType substitution tables">Glyph List<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></button>
+                  <button type="button" id="wikitoggle" class="btn outline" title="Wikipedia mode: on = Wikipedia articles, off = tests">Wiki<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg></button>
+                  <button type="button" id="glyphtoggle" class="btn outline" title="Show every character the font has (read from its cmap table) + glyphs without unicode values from OpenType substitution tables">Glyph List<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg></button>
                </div>
             </section>
             <nav>

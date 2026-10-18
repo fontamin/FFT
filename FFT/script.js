@@ -140,7 +140,7 @@
   }
 
   /* =================== Slider bubble =================== */
-  function attachBubble(slider) {
+  function attachBubble(slider, fmt) {
     const b = document.createElement('span');
     b.className = 'slider-value';
     slider.parentElement.style.position = 'relative';
@@ -149,7 +149,7 @@
       const min = parseFloat(slider.min) || 0, max = parseFloat(slider.max) || 100;
       const val = parseFloat(slider.value);
       const half = 15, w = slider.offsetWidth;
-      b.textContent = String(+val.toFixed(2));
+      b.textContent = fmt ? fmt(val) : String(+val.toFixed(2));
       if (!w) return;
       let px = ((val - min) / ((max - min) || 1)) * (w - 30) + half;
       b.style.left = Math.min(w - half, Math.max(half, px)) + 'px';
@@ -188,6 +188,8 @@
   function swapScroll(from, to, pos) {
     scrollMem[from] = pos;
     secEl().scrollLeft = scrollMem[to] || 0;
+    // multi-row: the row is re-packed (and its width changes) right after this, so packRows applies the position again once it is done
+    if (frows > 1) { wantScroll = scrollMem[to] || 0; setTimeout(() => { wantScroll = null; }, 400); }
   }
 
   /* =================== Build UI from font info =================== */
@@ -292,8 +294,7 @@
     putCustom(tag, on);
     otTag.value = ''; otVal.value = '';
     buildFeatures(); applyStyles();
-    const cb = $('#f_' + cleanId(tag));
-    if (cb) cb.closest('p').scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    revealAfterPack('label[for="f_' + cleanId(tag) + '"]');
   }
   $('#otadd').addEventListener('click', addCustom);
   [otTag, otVal].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); }));
@@ -304,20 +305,29 @@
   // slide-up animation when a sub-menu opens; when going back (backing = true) the sub-menu has just slid down,
   // so the normal row only fades in. The class is removed and re-added so the animation restarts every time.
   let backing = false;
+  // The elements that really have a box in the current layout. In multi-row mode the groups (#colorgroup, #instgroup, #wikigroup...)
+  // are display: contents, i.e. they have NO box, so an animation on the group itself is never drawn: animate their items instead.
+  function animTargets(g) {
+    if (frows < 2) return [g];
+    const t = [];
+    leafItems(g, t);
+    return t.length ? t : [g];
+  }
   function slideIn(el) {
     if (!el) return;
     const cls = backing ? 'fadein' : 'slidein';
-    el.classList.remove('slidein', 'fadein');
+    const targets = animTargets(el);
+    targets.forEach(t => t.classList.remove('slidein', 'fadein'));
     void el.offsetWidth;
-    el.classList.add(cls);
+    targets.forEach(t => t.classList.add(cls));
     // remove the class when the animation ends: otherwise it restarts every time the tab is shown again (display none -> shown)
-    const done = () => el.classList.remove(cls);
-    el.addEventListener('animationend', done, { once: true });
+    const done = () => targets.forEach(t => t.classList.remove(cls));
+    targets[0].addEventListener('animationend', done, { once: true });
     setTimeout(done, 400);
   }
   const syncInstBtn = () => {
     const n = (info.instances || []).length, on = tab2Row.classList.contains('instmode');
-    setBtn(instToggle, on ? 'Back' : n ? 'Instances · ' + n : 'Instances', on ? 'expand_less' : 'expand_more');
+    setBtn(instToggle, on ? 'Back' : n ? 'Instances · ' + n : 'Instances', on ? 'expand_more' : 'expand_less');
   };
 
   // an instance button is lit while the sliders are on that instance's values
@@ -764,8 +774,7 @@
       } else nb.classList.add('nox');
       listEl.appendChild(chip);
     });
-    const a = listEl.querySelector('.active');
-    if (a) a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    revealAfterPack('#fontlist .chip.active');
   }
 
   function activate(rec) {
@@ -1450,13 +1459,235 @@
     const before = secEl().scrollLeft;
     const on = $('.pc-tab section .tab1').classList.toggle('colormode');
     colorToggle.classList.toggle('on', on);
-    setBtn(colorToggle, on ? 'Back' : 'Layout Colors', on ? 'expand_less' : 'expand_more');
+    setBtn(colorToggle, on ? 'Back' : 'Layout Settings', on ? 'expand_more' : 'expand_less');
     slideIn($(on ? '#colorgroup' : '#layoutbasic'));
     updateT3();
     on ? swapScroll('tab1', 'colors', before) : swapScroll('colors', 'tab1', before);
     requestAnimationFrame(updateBubbles);
   });
   renderColors();
+
+  /* --- global UI scale (0.2x - 5x), saved in localStorage ---
+     The - / + buttons move one logarithmic step (about 3.3%) at a time: 100 steps cover 0.2x - 5x and step 50 is exactly 1x.
+     While the scale is far from 1x a "reset" badge is shown. It is counter-zoomed (zoom = 1 / scale), so it keeps its normal size
+     and position and can always be reached, even when the zoomed footer is too big to use. */
+  const SCALE_KEY = 'fft-scale';
+  const SCALE_STEPS = 100, SCALE_MIN = 0.2;
+  const scaleVal = $('#scaleval'), scaleMinus = $('#scaleminus'), scalePlus = $('#scaleplus');
+  let uiScale = 1, scalePos = 50;
+  const posToScale = t => Math.round(SCALE_MIN * Math.pow(25, t / SCALE_STEPS) * 1000) / 1000;
+  const scaleToPos = v => Math.round(SCALE_STEPS * Math.log(v / SCALE_MIN) / Math.log(25));
+  const rescue = document.createElement('button');
+  rescue.id = 'scalerescue'; rescue.type = 'button';
+  document.body.appendChild(rescue);
+  rescue.addEventListener('click', () => setScale(1));
+  function setScale(v, save, pos) {
+    v = Math.min(5, Math.max(0.2, +v || 1));
+    uiScale = v;
+    scalePos = pos != null ? pos : scaleToPos(v);
+    document.documentElement.style.zoom = v === 1 ? '' : v;
+    const shown = +v.toFixed(2) + 'x';
+    scaleVal.textContent = shown;
+    scaleMinus.disabled = scalePos <= 0;
+    scalePlus.disabled = scalePos >= SCALE_STEPS;
+    const far = v > 1.25 || v < 0.8;
+    rescue.classList.toggle('on', far);
+    rescue.style.zoom = far ? 1 / v : '';
+    rescue.textContent = 'Reset scale · ' + shown;
+    if (save !== false) { try { localStorage.setItem(SCALE_KEY, String(v)); } catch (e) {} }
+    requestAnimationFrame(() => { updateBubbles(); scheduleGuides(); if (glyphOn) updateGlyphSize(); });
+  }
+  const stepScale = d => {
+    const p = Math.min(SCALE_STEPS, Math.max(0, scalePos + d));
+    if (p !== scalePos) setScale(posToScale(p), true, p);
+  };
+  scaleMinus.addEventListener('click', () => stepScale(-1));
+  scalePlus.addEventListener('click', () => stepScale(1));
+  $('#scalereset').addEventListener('click', () => setScale(1));
+  {
+    let s = 1;
+    try { s = parseFloat(localStorage.getItem(SCALE_KEY)) || 1; } catch (e) {}
+    setScale(s, false);
+  }
+
+  /* --- footer rows (1 - 6), saved in localStorage ---
+     1 = the normal single row. With more rows, packRows() fills row 1 first and moves to row 2 only when row 1 is full.
+     When the items do not fit in the page width even with all rows, they run left to right through the rows with (about)
+     equal row widths, so every row overflows the page by the same amount and the whole tab scrolls horizontally. */
+  const ROWS_KEY = 'fft-rows', ROWS_MAX = 6, ROW_GAP = 8;
+  const rowsVal = $('#rowsval'), rowsMinus = $('#rowsminus'), rowsPlus = $('#rowsplus');
+  let frows = 1;
+  const ROW_TABS = ['tab1', 'tab2', 'tab3', 'tab5', 'tab6'];
+  // containers whose children are laid out as if they were direct children of the tab (display: contents in multirow mode)
+  const FLAT = new Set(['layoutbasic', 'colorgroup', 'axesgroup', 'instgroup', 'testgroup', 'wikigroup', 'glyphgroup',
+    'axes', 'features', 'instances', 'fontlist', 'testlist', 'wikilangs', 'colorlist']);
+
+  let wantScroll = null, pendingReveal = null;   // see swapScroll / revealAfterPack
+  const REORDER = true;   // false = never move items to fill gaps (original order only)
+  const isSep = el => el.classList.contains('vsep');
+  // width of an item including its horizontal margins (the vertical separators have 6px each side)
+  const outerW = el => {
+    const cs = getComputedStyle(el);
+    return el.offsetWidth + (parseFloat(cs.marginLeft) || 0) + (parseFloat(cs.marginRight) || 0);
+  };
+
+  function unpackRows() {
+    $$('.rowbrk').forEach(x => x.remove());
+    $$('[data-rb]').forEach(x => { x.style.marginInlineStart = ''; x.removeAttribute('data-rb'); });
+    $$('[data-ord]').forEach(x => { x.style.order = ''; x.removeAttribute('data-ord'); });
+    $$('.sepoff').forEach(x => x.classList.remove('sepoff'));
+    ROW_TABS.forEach(id => { const c = $('.pc-tab section .' + id); if (c) c.style.width = ''; });
+  }
+  function leafItems(el, out) {
+    for (const c of el.children) {
+      if (c.classList.contains('rowbrk') || c.classList.contains('hidden')) continue;
+      const cs = getComputedStyle(c);
+      if (cs.display === 'none') continue;
+      if (FLAT.has(c.id)) { leafItems(c, out); continue; }
+      if (cs.position === 'fixed' || cs.position === 'absolute') continue;   // status / css-preview lines
+      if (c.offsetWidth > 0) out.push(c);
+    }
+  }
+  function packRowsInner() {
+    unpackRows();
+    if (frows < 2) return;
+    const id = ROW_TABS.find(t => document.getElementById(t).checked);
+    const box = id && $('.pc-tab section .' + id);
+    if (!box) return;
+    const cg = parseFloat(getComputedStyle(box).columnGap);
+    const gap = isNaN(cg) ? ROW_GAP : cg;   // the real gap of this tab's row (CSS --rgap)
+    const W = secEl().clientWidth;
+    if (!W) return;
+    const items = [];
+    leafItems(box, items);
+    if (!items.length) return;
+    const ww = new Map(items.map(it => [it, outerW(it)]));
+    const w = it => ww.get(it);
+    let rows = [[]], widths = [0];
+    const total = items.reduce((s, it) => s + w(it), 0) + gap * Math.max(0, items.length - 1);
+    const LIM = W - 8;   // a little slack: widths are rounded, and a row that is 1px too wide would wrap by itself
+
+    if (total / frows <= LIM) {
+      // Everything fits inside the page width. Items are split into groups by the vertical separators. Rows are filled
+      // from the top; when the next member of a group does not fit in the rest of the row, the first later member of the
+      // SAME group that fits is moved up, so rows keep as little empty space as possible. Groups keep their order.
+      const groups = [];
+      let sep = null, cur = [];
+      const flush = () => { if (cur.length) groups.push({ sep: groups.length ? sep : null, list: cur }); cur = []; };
+      items.forEach(it => { if (isSep(it)) { flush(); sep = it; } else cur.push(it); });
+      flush();
+      const put = it => {
+        const r = rows.length - 1;
+        widths[r] = rows[r].length ? widths[r] + gap + w(it) : w(it);
+        rows[r].push(it);
+      };
+      const fits = it => { const r = rows.length - 1; return !rows[r].length || widths[r] + gap + w(it) <= LIM; };
+      groups.forEach(g => {
+        if (g.sep && fits(g.sep)) put(g.sep);          // if it ends a row it is hidden afterwards
+        const pend = g.list.slice();
+        while (pend.length) {
+          let i = REORDER ? pend.findIndex(fits) : (fits(pend[0]) ? 0 : -1);
+          if (i < 0) {
+            if (rows.length < frows) { rows.push([]); widths.push(0); continue; }
+            i = 0;                                      // last row: the rest overflows and scrolls
+          }
+          put(pend.splice(i, 1)[0]);
+        }
+      });
+    } else {
+      // Too much for the page: items go left to right through the rows, split so that all rows get (about) the same width
+      // (minimum sum of squared row widths), so every row overflows the page by the same amount and they scroll together
+      const m = items.length, nr = Math.min(frows, m), P = [0];
+      items.forEach((it, i) => P.push(P[i] + w(it) + gap));
+      const rw = (j, i) => P[i] - P[j] - gap;
+      const dp = [], from = [];
+      for (let r = 0; r <= nr; r++) { dp.push(new Array(m + 1).fill(Infinity)); from.push(new Array(m + 1).fill(0)); }
+      dp[0][0] = 0;
+      for (let r = 1; r <= nr; r++) for (let i = r; i <= m; i++) for (let k = r - 1; k < i; k++) {
+        const c = dp[r - 1][k] + rw(k, i) * rw(k, i);
+        if (c < dp[r][i]) { dp[r][i] = c; from[r][i] = k; }
+      }
+      const cuts = [];
+      for (let r = nr, i = m; r > 0; r--) { cuts.unshift(from[r][i]); i = from[r][i]; }
+      rows = cuts.map((start, r) => items.slice(start, r + 1 < cuts.length ? cuts[r + 1] : m));
+      widths = [];
+    }
+
+    // a separator at the start or the end of a row (or one that was not placed at all) is hidden
+    rows.forEach(row => {
+      while (row.length && isSep(row[0])) row.shift().classList.add('sepoff');
+      while (row.length && isSep(row[row.length - 1])) row.pop().classList.add('sepoff');
+    });
+    rows = rows.filter(r => r.length);
+    widths = rows.map(row => row.reduce((s, it, i) => s + w(it) + (i ? gap : 0), 0));
+    const placed = new Set(rows.flat());
+    items.forEach(it => { if (isSep(it) && !placed.has(it)) it.classList.add('sepoff'); });
+
+    // visual order (CSS order, the DOM is not touched), a line break before every row after the first, and the centering offset
+    let k = 0;
+    rows.forEach((row, r) => {
+      row.forEach(it => { it.setAttribute('data-ord', ''); it.style.order = (++k) * 2; });
+      const first = row[0];
+      first.setAttribute('data-rb', '');
+      first.style.marginInlineStart = Math.max(0, Math.floor((W - widths[r]) / 2)) + 'px';
+      if (r > 0) {
+        const brk = document.createElement('i');
+        brk.className = 'rowbrk';
+        brk.style.order = String(+first.style.order - 1);
+        first.parentNode.insertBefore(brk, first);
+      }
+    });
+    box.style.width = Math.max(W, Math.max(...widths) + 8) + 'px';
+  }
+  // Packing resets the width of the row for a moment (so the items can be measured), and the browser clamps the horizontal scroll
+  // position while it is narrow: without this the position jumped back whenever something in the footer changed.
+  function packRows() {
+    const sec = secEl();
+    const keep = wantScroll != null ? wantScroll : sec.scrollLeft;
+    wantScroll = null;
+    packRowsInner();
+    if (sec.scrollLeft !== keep) sec.scrollLeft = keep;
+    if (sec.scrollTop) sec.scrollTop = 0;   // (hidden overflow can still be scrolled by scrollIntoView in the unpacked layout)
+    if (pendingReveal) { const sel = pendingReveal; pendingReveal = null; revealNow(sel); }
+  }
+  function revealNow(sel) {
+    const el = [...secEl().querySelectorAll(sel)].find(e => e.offsetWidth > 0);
+    if (el) (el.closest('.font-slider') || el).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  function revealAfterPack(sel) {
+    if (frows < 2) { revealNow(sel); return; }
+    pendingReveal = sel;
+    setTimeout(() => { if (pendingReveal === sel) pendingReveal = null; }, 400);
+  }
+  let packRaf = 0;
+  const schedulePack = () => { if (packRaf) return; packRaf = requestAnimationFrame(() => { packRaf = 0; packRows(); }); };
+  // repack when the content of the footer changes (not for our own line breaks)
+  const outOfFlow = n => { const el = n.nodeType === 1 ? n : n.parentElement; return !!(el && el.closest('.status, .right-side-header, .slider-value')); };
+  new MutationObserver(recs => {
+    if (recs.every(r => outOfFlow(r.target) ||
+        (r.type === 'childList' && [...r.addedNodes, ...r.removedNodes].every(n => n.classList && n.classList.contains('rowbrk'))))) return;
+    schedulePack();
+  }).observe($('.pc-tab section'), { childList: true, subtree: true, characterData: true });
+  ROW_TABS.forEach(id => new MutationObserver(schedulePack).observe($('.pc-tab section .' + id), { attributes: true, attributeFilter: ['class'] }));
+  if (window.ResizeObserver) new ResizeObserver(schedulePack).observe($('.pc-tab section'));
+  window.addEventListener('resize', schedulePack);
+  ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].forEach(id => document.getElementById(id).addEventListener('change', schedulePack));
+
+  function setRows(n, save) {
+    n = Math.min(ROWS_MAX, Math.max(1, Math.round(+n) || 1));
+    frows = n;
+    document.body.style.setProperty('--frows', n);
+    document.body.classList.toggle('multirow', n > 1);
+    rowsVal.textContent = n;
+    rowsMinus.disabled = n <= 1;
+    rowsPlus.disabled = n >= ROWS_MAX;
+    if (save !== false) { try { localStorage.setItem(ROWS_KEY, String(n)); } catch (e) {} }
+    schedulePack();
+    requestAnimationFrame(() => { updateBubbles(); scheduleGuides(); if (glyphOn) updateGlyphSize(); });
+  }
+  rowsMinus.addEventListener('click', () => setRows(frows - 1));
+  rowsPlus.addEventListener('click', () => setRows(frows + 1));
+  try { setRows(parseInt(localStorage.getItem(ROWS_KEY), 10) || 1, false); } catch (e) { setRows(1, false); }
 
   /* =================== Text box helpers =================== */
   // Two separate text boxes: #Test (tests) and #Wiki (Wikipedia article). They never mix.
@@ -1486,8 +1717,8 @@
     tab6El.classList.toggle('glyphmode', glyphOn);
     wikiToggle.classList.toggle('on', wikiOn);
     glyphToggle.classList.toggle('on', glyphOn);
-    setBtn(wikiToggle, wikiOn ? 'Back' : 'Wiki', wikiOn ? 'expand_less' : 'expand_more');
-    setBtn(glyphToggle, glyphOn ? 'Back' : 'Glyph List', glyphOn ? 'expand_less' : 'expand_more');
+    setBtn(wikiToggle, wikiOn ? 'Back' : 'Wiki', wikiOn ? 'expand_more' : 'expand_less');
+    setBtn(glyphToggle, glyphOn ? 'Back' : 'Glyph List', glyphOn ? 'expand_more' : 'expand_less');
     if (glyphOn) renderGlyphs();
     syncView();
     if (changed) {
@@ -1801,8 +2032,8 @@
       const cell = n.parentElement.closest('.glyph');
       const cr = cell ? cell.getBoundingClientRect() : null;   // Glyph List: lines span the whole cell
       for (const g of lines.values()) {
-        const yb = g.t - dyn.top + ratio * cs.fs;
-        const x1 = (cr ? cr.left : g.l) - dyn.left, x2 = (cr ? cr.right : g.r) - dyn.left;
+        const yb = (g.t - dyn.top) / uiScale + ratio * cs.fs;
+        const x1 = ((cr ? cr.left : g.l) - dyn.left) / uiScale, x2 = ((cr ? cr.right : g.r) - dyn.left) / uiScale;
         if (m.asc)  solid += line(x1, x2, yb - m.asc * cs.fs);
         if (m.desc) solid += line(x1, x2, yb + m.desc * cs.fs);
         if (m.xh)   dash  += line(x1, x2, yb - m.xh * cs.fs);
@@ -1835,7 +2066,7 @@
   $$('input[name="align"]').forEach(r => r.addEventListener('click', () => {
     if (curAlign === r.value) { r.checked = false; curAlign = ''; }   // click the active one again to go back to the default
     else curAlign = r.value;
-    target.classList.remove('al-right', 'al-left', 'al-justify');
+    target.classList.remove('al-right', 'al-center', 'al-left', 'al-justify');
     if (curAlign) target.classList.add('al-' + curAlign);
     scheduleGuides();
   }));
@@ -2340,7 +2571,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       return o;
     });
     const feats = customFeats.map(f => ({ tag: f.tag, on: f.on }));
-    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors };
+    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors, scale: uiScale, rows: frows };
     const data = JSON.stringify({ app: 'FFT', version: 1, settings, tests: out, features: feats, colors: colors.map(cleanColor) }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -2393,6 +2624,8 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       saveTheme();
     }
     if (typeof st.dark === 'boolean' || st.themeColors) applyThemeColors();
+    if (typeof st.scale === 'number' && st.scale >= 0.2 && st.scale <= 5) { setScale(st.scale); n++; }
+    if (typeof st.rows === 'number') { setRows(st.rows); n++; }
     return n;
   }
 
@@ -2499,8 +2732,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     saveTests();
     closeModal();
     showTest(t);
-    const a = testListEl.querySelector('.active');
-    if (a) a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    revealAfterPack('#testlist .chip.active');
   }
 
   $('#testadd').addEventListener('click', openModal);
@@ -2745,29 +2977,21 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   }
   [t1, t2, t3, statusEl, wikiStatus].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));
 
-  /* =================== Tabs: bubbles refresh + one-time auto scroll =================== */
+  /* =================== Tabs: bubbles refresh =================== */
   const section = $('.pc-tab > section');
-  function autoScrollSection() {
-    const max = section.scrollWidth - section.clientWidth;
-    if (max <= 0) return;
-    section.scrollTo({ left: max, behavior: 'smooth' });
-    setTimeout(() => section.scrollTo({ left: 0, behavior: 'smooth' }), 1000 + max / 2);
-  }
   ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].forEach(id => {
     const tab = document.getElementById(id);
     tab.addEventListener('change', () => {
       section.scrollLeft = 0;
       if (!tab.checked) return;
+      const lb = $('.pc-tab nav .' + id + ' label');
+      if (lb) lb.scrollIntoView({ block: 'nearest', inline: 'nearest' });   // tab bar scrolls when the UI scale is big
       // Test tab -> test text, or the article when the Wiki button is on. Other tabs keep whatever is on screen.
       if (id === 'tab6') { viewWiki = wikiOn; viewGlyph = glyphOn; syncView(); }
       updateAbout();
       requestAnimationFrame(updateBubbles);
       if (id === 'tab5') requestAnimationFrame(renderList);
       if (id === 'tab6') requestAnimationFrame(renderTests);
-      if ((id === 'tab2' || id === 'tab3') && !tab.dataset.scrolled) {
-        tab.dataset.scrolled = '1';
-        requestAnimationFrame(autoScrollSection);
-      }
     });
   });
   window.addEventListener('resize', updateBubbles);
@@ -2821,6 +3045,8 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       if (!down) return;
       down = false;
       section.classList.remove('dragging');
+      // the click that follows a drag is swallowed; if it never comes (mouse released outside the row) the flag must not stay set
+      setTimeout(() => { moved = false; }, 50);
     };
     window.addEventListener('mouseup', end);
     window.addEventListener('blur', end);
@@ -2851,22 +3077,25 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   const syncBack = () => footBar.classList.toggle('submenu', !!tabRowIn(checkedTab()));
   const subGroup = id => id === 'tab1' ? $('#colorgroup') : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');
   // back: the open sub-menu slides down and away, then the normal row of the tab comes back
+  let finishBack = null;   // finishes the running "back" animation at once
   backBar.addEventListener('click', () => {
-    if (backing) return;
+    // a second tap while the menu is still sliding out finishes the exit now, instead of being ignored
+    if (backing) { if (finishBack) finishBack(); return; }
     const id = checkedTab(), b = tabRowIn(id), g = subGroup(id);
     if (!b) return;
     backing = true;
     let done = false;
+    const targets = animTargets(g);
     const go = () => {
       if (done) return;
-      done = true;
-      g.classList.remove('slideout');
+      done = true; finishBack = null;
+      targets.forEach(t => t.classList.remove('slideout'));
       b.click();
       setTimeout(() => { backing = false; }, 60);
     };
-    g.classList.add('slideout');
-    g.addEventListener('animationend', go, { once: true });
-    setTimeout(go, 320);   // safety net if the animation event never comes
+    finishBack = go;
+    targets.forEach(t => t.classList.add('slideout'));
+    setTimeout(go, 240);   // the slide-out animation lasts .22s
   });
   ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].forEach(id => document.getElementById(id).addEventListener('change', syncBack));
   // touch: dragging down on the footer inside a sub-menu goes back (same as tapping the bar)

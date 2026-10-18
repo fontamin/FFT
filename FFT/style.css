@@ -238,21 +238,28 @@ footer {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 16px;
+  bottom: 6px;
+  padding-bottom: 10px;           /* room for the dot under each title (the nav clips it); with bottom: 6px this is the old 16px */
   display: flex;
-  justify-content: center;
+  overflow-x: auto;               /* never wraps: with a big UI scale the tab names scroll sideways instead of piling up over the controls */
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
+.pc-tab nav::-webkit-scrollbar { display: none; }
 
 .pc-tab nav ul {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between; /* یا space-around */
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  justify-content: flex-start;
   padding: 0;
-  margin: 0;
+  margin: 0 auto;                 /* centered when everything fits; starts at the left edge (and scrolls) when it does not */
   gap: clamp(0px, 10vw, 20px);
 }
-
+.pc-tab nav li { flex: 0 0 auto; }
 
 .pc-tab ul li label {
   display: inline-block;
@@ -1018,7 +1025,11 @@ input.hidden + label.zero { opacity: .5; }
 /* the chosen alignment wins over the text's own (inline style) alignment */
 .dynamic.al-right   :is(p, div, ol, li):not(.sizelabel) { text-align: right !important; }
 .dynamic.al-left    :is(p, div, ol, li):not(.sizelabel) { text-align: left !important; }
+.dynamic.al-center  :is(p, div, ol, li):not(.sizelabel) { text-align: center !important; }
 .dynamic.al-justify :is(p, div, ol, li):not(.sizelabel) { text-align: justify !important; }
+
+/* vertical divider between groups of controls (used before the Scale group) */
+.vsep { flex: 0 0 1.5px; align-self: center; width: 1.5px; height: 24px; margin: 0 6px; background: var(--line); border-radius: 1px; }
 
 /* OpenType features kept from another font that this font does not have */
 .font-slider.carried label { opacity: .55; }
@@ -1406,3 +1417,102 @@ footer.submenu .pc-tab > section { touch-action: pan-x; }
 #layoutbasic { gap: 14px; }
 #layoutbasic > .font-slider { padding-left: 0; padding-right: 0; }
 #layoutbasic > .aligns { margin-inline-start: 0; }
+
+
+/* =================== Footer rows (Layout Settings > Rows) =================== */
+/* --frows is set on <body> by script.js (default 1 = the normal single row). Each extra row adds --rowh to the footer.
+   With more than one row, script.js (packRows) fills row 1 first, then row 2 ... up to the last row; whatever does not fit
+   stays in the last row and scrolls horizontally, like the single-row footer. Every row is centered. */
+body { --frows: 1; --rowh: 36px; --fextra: calc((var(--frows) - 1) * var(--rowh)); }
+footer { height: calc(85px + var(--fextra)); }
+header { padding-bottom: calc(8px + var(--fextra)); }
+.DarkModeLabel { bottom: calc(95px + var(--fextra)); }
+#autobtn { bottom: calc(138px + var(--fextra)); }
+.right-side-header, .status { bottom: calc(92px + var(--fextra)); }
+.btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+.stepper { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 8px; }
+.stepper b { min-width: 1.5ch; text-align: center; font-weight: normal; color: var(--accent); }
+.stepper .btn { padding: 6px 8px; }
+
+/* set by packRows when a separator would end up at the start / end of a row */
+.vsep.sepoff { display: none; }
+/* items that must never be split between rows */
+.ugroup { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 8px; white-space: nowrap; }
+body.multirow #layoutbasic, body.multirow #colorgroup,
+body.multirow #axesgroup, body.multirow #instgroup,
+body.multirow #testgroup, body.multirow #wikigroup, body.multirow #glyphgroup { display: contents; }
+body.multirow #tab1:checked ~ section .tab1,
+body.multirow #tab2:checked ~ section .tab2,
+body.multirow #tab3:checked ~ section .tab3,
+body.multirow #tab5:checked ~ section .tab5,
+body.multirow #tab6:checked ~ section .tab6 {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  justify-content: flex-start;   /* the offset of each row (centering) is set by packRows */
+  gap: 0 var(--rgap, 8px);      /* column gap per tab: --rgap (default 8px) */
+  width: 100%;                   /* packRows widens it when the last row overflows */
+  min-width: 0;
+  height: calc(var(--frows) * var(--rowh));
+  padding: 0;
+  white-space: nowrap;
+}
+body.multirow #tab1:checked ~ section,
+body.multirow #tab2:checked ~ section,
+body.multirow #tab3:checked ~ section,
+body.multirow #tab5:checked ~ section,
+body.multirow #tab6:checked ~ section {
+  height: calc(45px + (var(--frows) - 1) * var(--rowh));   /* 5px padding + the normal 40px row + the extra rows */
+}
+/* every item (direct child of a row container) takes one line of --rowh: 32px + 2px margin above and below */
+body.multirow section > :is(.tab1, .tab2, .tab3, .tab5, .tab6) > *:not(.right-side-header):not(.status):not(.vsep),
+body.multirow :is(#layoutbasic, #colorgroup, #axesgroup, #instgroup, #testgroup, #wikigroup, #glyphgroup,
+  #axes, #features, #instances, #fontlist, #testlist, #wikilangs, #colorlist) > *:not(.right-side-header):not(.status):not(.vsep) {
+  min-height: 32px;
+  margin-block: 2px;
+  flex: 0 0 auto;
+}
+body.multirow .font-slider { padding-block: 0; }
+body.multirow #dangerzone { height: 34px; margin-block: 1px; }
+body.multirow #fontbulk { position: static; min-height: 34px; margin-block: 1px; background: none; }
+@media (max-width: 600px), (pointer: coarse) {
+  body.multirow #fontbulk .btn { height: 16px; }
+}
+/* forced line break between two rows (inserted by packRows) */
+.rowbrk { display: none; }
+body.multirow .rowbrk { display: block; flex: 0 0 100% !important; height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0; border: 0; visibility: hidden; }
+
+/* =================== Per-tab item gap =================== */
+/* OpenType: the pills had 6px side padding on top of the 8px gap (20px between them). Now only this gap is left.
+   Change --ot-gap to make the OpenType items closer / farther. packRows reads the real gap from the row, so nothing else needs changing. */
+body { --ot-gap: 12px; }
+#tab3:checked ~ section .tab3 { --rgap: var(--ot-gap); gap: var(--ot-gap); }
+.tab3 .font-slider { padding-left: 0; padding-right: 0; }
+
+/* =================== UI scale: - / + buttons and the always-reachable reset badge =================== */
+#scaleval { min-width: 5.5ch; }
+/* The badge is counter-zoomed from JS (zoom = 1 / scale), so it keeps its normal size and position however big or small the UI is.
+   It only shows while the scale is far from 1x. */
+#scalerescue {
+  position: fixed;
+  top: 10px;
+  left: 112px;
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--accent);
+  border-radius: 18px;
+  background: var(--footer);
+  color: var(--accent);
+  font: 14px monospace;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .25);
+  -webkit-tap-highlight-color: transparent;
+}
+#scalerescue.on { display: inline-flex; }
+#scalerescue:hover { background: var(--accent); color: var(--on-accent); }
