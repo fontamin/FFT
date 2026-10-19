@@ -876,7 +876,7 @@ input.hidden + label.zero { opacity: .5; }
   top: 60%;
   transform: translate(-50%, -50%);
   font-size: 10px;
-  color: white;
+  color: var(--on-accent);
   background: transparent;
   pointer-events: none;
   user-select: none;
