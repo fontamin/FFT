@@ -1,5 +1,9 @@
 # FFT — Fontamin Font Tester
 
+<p align="center">
+  <img src="images/FFT.webp" alt="FFT" width="600">
+</p>
+
 A small, fast, responsive font tester that runs entirely in the browser. Drop one or more font files on the page, type or pick a specimen text, and play with size, line height, variable axes, OpenType features and colors. Built for type designers, with Arabic(mostly focused on Farsi) / Latin scripts in mind.
 
 No build step, no dependencies, no server, no tracking: three static files (`index.html`, `script.js`, `style.css`).

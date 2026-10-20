@@ -35,6 +35,9 @@
   const listEl   = $('#fontlist');
   const diceBtn  = $('#randbutton');
   const showAll  = $('#showall');
+  const longNames = $('#longnames');   // off = only the 4-letter tag, on = full name + tag
+  const NAMES_KEY = 'fft-featnames';
+  try { longNames.checked = localStorage.getItem(NAMES_KEY) === '1'; } catch (e) {}
   const t1 = $('#text1'), t2 = $('#text2'), t3 = $('#text3');
   const statusEl = $('#fontstatus');
   const nameEl   = $('#fontname');
@@ -270,7 +273,10 @@
       cb.autocomplete = 'off'; cb.checked = featOn[tag];
       cb.addEventListener('change', () => { featOn[tag] = cb.checked; applyStyles(); });
       const lb = document.createElement('label');
-      lb.htmlFor = cb.id; lb.textContent = featName(tag) === tag ? tag : `${featName(tag)} · ${tag}`;
+      const full = featName(tag) === tag ? tag : `${featName(tag)} · ${tag}`;
+      lb.htmlFor = cb.id;
+      lb.textContent = longNames.checked ? full : tag;
+      lb.title = full;   // the full name is always in the tooltip
       p.append(cb, lb);
       if (cf) {
         const xb = document.createElement('button');
@@ -390,6 +396,10 @@
   }
 
   showAll.addEventListener('change', () => { buildFeatures(); applyStyles(); });
+  longNames.addEventListener('change', () => {
+    try { localStorage.setItem(NAMES_KEY, longNames.checked ? '1' : '0'); } catch (e) {}
+    buildFeatures(); applyStyles();
+  });
 
   diceBtn.addEventListener('click', () => {
     info.axes.forEach(a => {
@@ -1174,6 +1184,15 @@
     const n = parseInt(h.slice(1), 16);
     return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 < 0.5;
   };
+  // text color for something painted in color h (slider numbers on the thumb, hovered buttons...): black or white,
+  // whichever has the higher WCAG contrast. This is better than a plain light/dark threshold: on a mid-tone like the
+  // default red (#ff4242) white looks "right" but black is clearly easier to read.
+  const relLum = h => {
+    const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const n = parseInt(h.slice(1), 16);
+    return 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255);
+  };
+  const onColor = h => { const L = relLum(h); return 1.05 / (L + 0.05) > (L + 0.05) / 0.05 ? '#ffffff' : '#000000'; };
   const normHex = v => {
     v = (v || '').trim().toLowerCase().replace(/^#/, '');
     if (/^[0-9a-f]{3}$/.test(v)) v = v.replace(/./g, '$&$&');
@@ -1252,7 +1271,7 @@
     const cfg = isDarkHex(c.chip) ? '#aaaaaa' : '#222222';
     const vars = {
       '--text': c.text, '--bg': c.bg,
-      '--accent': c.accent, '--accent-bg': c.accent + '22', '--on-accent': isDarkHex(c.accent) ? '#ffffff' : '#000000',
+      '--accent': c.accent, '--accent-bg': c.accent + '22', '--on-accent': onColor(c.accent),
       '--selection': mixHex(c.accent, '#ffffff', 0.33),
       '--footer': c.footer, '--footer-fg': ffg, '--nav-fg': ffg + '77',
       '--line': mixHex(c.footer, ffg, 0.35), '--track': mixHex(c.footer, ffg, 0.2),
@@ -2571,7 +2590,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       return o;
     });
     const feats = customFeats.map(f => ({ tag: f.tag, on: f.on }));
-    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors, scale: uiScale, rows: frows };
+    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors, scale: uiScale, rows: frows, hoverTabs: hoverTabs.checked };
     const data = JSON.stringify({ app: 'FFT', version: 1, settings, tests: out, features: feats, colors: colors.map(cleanColor) }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -2626,6 +2645,11 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     if (typeof st.dark === 'boolean' || st.themeColors) applyThemeColors();
     if (typeof st.scale === 'number' && st.scale >= 0.2 && st.scale <= 5) { setScale(st.scale); n++; }
     if (typeof st.rows === 'number') { setRows(st.rows); n++; }
+    if (typeof st.hoverTabs === 'boolean') {
+      hoverTabs.checked = st.hoverTabs; syncHoverTabs();
+      try { localStorage.setItem(HOVER_KEY, st.hoverTabs ? '1' : '0'); } catch (e) {}
+      n++;
+    }
     return n;
   }
 
@@ -2998,6 +3022,42 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   // the sticky "↻ all / × all" group gets its shadow once the row has been scrolled
   section.addEventListener('scroll', () => $('.tab5').classList.toggle('scrolled', section.scrollLeft > 0), { passive: true });
 
+  /* =================== Switch tabs by hover (mouse) / touch-drag (touch), optional: Layout Settings =================== */
+  // Off by default: a tab only opens with a click (a mouse that brushes the tab names must not change the tab).
+  // On: a mouse opens a tab after resting on its name for a moment; a finger that touches the tab names and slides
+  // along them moves between the tabs (the tab names row does not scroll while this is on).
+  const HOVER_KEY = 'fft-hovertabs';
+  const hoverTabs = $('#hovertabs'), tabNav = $('.pc-tab nav');
+  try { hoverTabs.checked = localStorage.getItem(HOVER_KEY) === '1'; } catch (e) {}
+  const syncHoverTabs = () => document.body.classList.toggle('tabdrag', hoverTabs.checked);
+  syncHoverTabs();
+  hoverTabs.addEventListener('change', () => {
+    syncHoverTabs();
+    try { localStorage.setItem(HOVER_KEY, hoverTabs.checked ? '1' : '0'); } catch (e) {}
+  });
+  const goTab = id => { const r = id && document.getElementById(id); if (r && !r.checked) r.click(); };
+  const navLabelId = el => { const lb = el && el.closest && el.closest('.pc-tab nav label'); return lb ? lb.htmlFor : ''; };
+  let tabDragging = false;
+  // mouse: the tab opens as soon as the mouse is over its name
+  tabNav.addEventListener('pointerover', e => {
+    if (!hoverTabs.checked || e.pointerType !== 'mouse') return;
+    goTab(navLabelId(e.target));
+  });
+  // touch / pen: press on the tab names and slide; the tab whose name is nearest to the finger (horizontally) opens
+  tabNav.addEventListener('pointerdown', e => { tabDragging = hoverTabs.checked && e.pointerType !== 'mouse'; });
+  tabNav.addEventListener('pointermove', e => {
+    if (!tabDragging) return;
+    let best = '', dist = Infinity;
+    $$('label', tabNav).forEach(lb => {
+      const r = lb.getBoundingClientRect();
+      if (!r.width) return;
+      const d = e.clientX >= r.left && e.clientX <= r.right ? 0 : Math.abs(e.clientX - (r.left + r.right) / 2);
+      if (d < dist) { dist = d; best = lb.htmlFor; }
+    });
+    goTab(best);
+  });
+  ['pointerup', 'pointercancel'].forEach(t => window.addEventListener(t, () => { tabDragging = false; }));
+
   /* Tabs open with a click. While the mouse is over the footer, the Left / Right arrow keys move between the tabs
      (in the order they are shown: Font, Layout, Test, Variation, OpenType, About). */
   const footerEl = $('footer');
@@ -3005,17 +3065,66 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   footerEl.addEventListener('mouseenter', () => { overFooter = true; });
   footerEl.addEventListener('mouseleave', () => { overFooter = false; });
   const TAB_ORDER = ['tab5', 'tab1', 'tab6', 'tab2', 'tab3', 'tab4'];
+  // next / previous tab; after the last one it starts again from the first (and the other way round)
+  function stepTab(dir) {
+    const cur = TAB_ORDER.findIndex(id => document.getElementById(id).checked);
+    const next = (cur + dir + TAB_ORDER.length) % TAB_ORDER.length;
+    if (next !== cur) document.getElementById(TAB_ORDER[next]).click();
+  }
+  // deeper (+1) / back (-1) in the sub-menus of the current tab. Returns true when something changed.
+  function stepMenu(dir) {
+    const id = checkedTab();
+    if (dir > 0) {
+      if (id === 'tab1' && !$('.pc-tab section .tab1').classList.contains('colormode')) { colorToggle.click(); return true; }
+      if (id === 'tab2' && !tab2Row.classList.contains('instmode')) { instToggle.click(); return true; }
+      if (id === 'tab6') {
+        if (!wikiOn && !glyphOn) { wikiToggle.click(); return true; }       // Test -> Wiki
+        if (wikiOn) { setMode('glyph'); updateAbout(); return true; }        // Wiki -> Glyph List
+      }
+      return false;
+    }
+    if (id === 'tab6' && glyphOn) {                                          // Glyph List -> Wiki
+      backing = true; setMode('wiki'); updateAbout();
+      setTimeout(() => { backing = false; }, 60);
+      return true;
+    }
+    if (footBar.classList.contains('submenu')) { backBar.click(); return true; }   // slide the open sub-menu away
+    return false;
+  }
   document.addEventListener('keydown', e => {
-    if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !overFooter || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    if (!/^Arrow(Left|Right|Up|Down)$/.test(e.key) || !overFooter || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
     const t = e.target;
     // never while typing: text fields, the editable text box, dialogs
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.type !== 'range' && t.type !== 'radio' && t.type !== 'checkbox' && t.type !== 'color')) return;
     if (document.querySelector('#testmodal.open, #colormodal.open')) return;
-    const cur = TAB_ORDER.findIndex(id => document.getElementById(id).checked);
-    const next = Math.min(TAB_ORDER.length - 1, Math.max(0, cur + (e.key === 'ArrowRight' ? 1 : -1)));
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      // Up opens the sub-menu of the tab (Layout Settings, Instances; in Test: Wiki first, then Glyph List), Down closes it
+      // in the same order, one step at a time. Tabs without a sub-menu leave the keys alone.
+      if (stepMenu(e.key === 'ArrowUp' ? 1 : -1)) e.preventDefault();
+      return;
+    }
     e.preventDefault();   // also stops a focused slider / radio from reacting to the arrow
-    if (next !== cur) document.getElementById(TAB_ORDER[next]).click();
+    stepTab(e.key === 'ArrowRight' ? 1 : -1);
   });
+
+  // 3) mouse wheel over the footer: same as the arrow keys (wheel down = next tab, wheel up = previous tab).
+  // Deltas are summed, so one notch of a mouse wheel = one tab, and a short pause after each switch keeps a
+  // trackpad's inertia from spinning through all the tabs. Horizontal scrolling (deltaX) is left alone: it scrolls the row.
+  let wheelAcc = 0, wheelLast = 0, wheelLock = 0;
+  footerEl.addEventListener('wheel', e => {
+    if (e.ctrlKey || e.metaKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // ctrl + wheel = browser zoom
+    if (document.querySelector('#testmodal.open, #colormodal.open')) return;
+    e.preventDefault();
+    const now = performance.now();
+    if (now < wheelLock) return;
+    if (now - wheelLast > 200) wheelAcc = 0;
+    wheelLast = now;
+    wheelAcc += e.deltaY;
+    if (Math.abs(wheelAcc) < 40) return;
+    stepTab(wheelAcc > 0 ? 1 : -1);
+    wheelAcc = 0;
+    wheelLock = now + 150;
+  }, { passive: false });
 
   /* =================== Mouse drag-to-scroll (footer section) =================== */
   (() => {
