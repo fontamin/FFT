@@ -116,29 +116,50 @@
   const baseName = n => n.replace(/\.[^.]+$/, '');
 
   /* =================== Apply styles =================== */
+  const tab1Row = $('.pc-tab section .tab1');
+  const setText = (el, s) => { if (el.textContent !== s) el.textContent = s; };
+  let lastLay = '', lastVar = null, lastFeat = null, applyRaf = 0;
+
   function updateT3() {
-    const colorMode = $('.pc-tab section .tab1').classList.contains('colormode');
-    t3.textContent = colorMode ? colorLine : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`;
+    const colorMode = tab1Row.classList.contains('colormode');
+    setText(t3, colorMode ? colorLine : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);
   }
+
+  // slider events: at most one update per frame
+  function queueApply() {
+    if (applyRaf) return;
+    applyRaf = requestAnimationFrame(() => { applyRaf = 0; applyStyles(); syncInstances(); });
+  }
+
   function applyStyles() {
     const fs = +sizeIn.value, fh = +heightIn.value;
-    target.style.fontSize = fs + 'px';
-    target.style.lineHeight = fh + 'em';
+    const lay = fs + '|' + fh, layoutChanged = lay !== lastLay;
+    if (layoutChanged) {
+      lastLay = lay;
+      target.style.fontSize = fs + 'px';
+      target.style.lineHeight = fh + 'em';
+    }
 
     const v = info.axes.map(a => `"${a.tag}" ${axisVals[a.tag]}`).join(', ');
-    target.style.fontVariationSettings = v || 'normal';
+    if (v !== lastVar) {
+      lastVar = v;
+      target.style.fontVariationSettings = v || 'normal';
+      setText(t1, `font-variation-settings: ${v || 'normal'};`);
+    }
 
     const f = [];
     Object.keys(featOn).forEach(tag => {
       if (featOn[tag] !== DEFAULT_ON.has(tag)) f.push(`"${tag}" ${featOn[tag] ? 1 : 0}`);
     });
     const fset = f.join(', ');
-    target.style.fontFeatureSettings = fset || 'normal';
+    if (fset !== lastFeat) {
+      lastFeat = fset;
+      target.style.fontFeatureSettings = fset || 'normal';
+      setText(t2, `font-feature-settings: ${fset || 'normal'};`);
+    }
 
-    t1.textContent = `font-variation-settings: ${v || 'normal'};`;
-    t2.textContent = `font-feature-settings: ${fset || 'normal'};`;
     updateT3();
-    if (glyphOn) updateGlyphSize();
+    if (glyphOn && layoutChanged) updateGlyphSize();   // glyph size only depends on Size / Height
     scheduleGuides();
   }
 
@@ -148,22 +169,24 @@
     b.className = 'slider-value';
     slider.parentElement.style.position = 'relative';
     slider.parentElement.appendChild(b);
-    const upd = () => {
+    let w = 0;
+    const upd = remeasure => {
       const min = parseFloat(slider.min) || 0, max = parseFloat(slider.max) || 100;
       const val = parseFloat(slider.value);
-      const half = 15, w = slider.offsetWidth;
+      const half = 15;
+      if (remeasure === true || !w) w = slider.offsetWidth;   // no layout read while dragging
       b.textContent = fmt ? fmt(val) : String(+val.toFixed(2));
       if (!w) return;
       let px = ((val - min) / ((max - min) || 1)) * (w - 30) + half;
       b.style.left = Math.min(w - half, Math.max(half, px)) + 'px';
     };
-    slider.addEventListener('input', upd);
+    slider.addEventListener('input', () => upd());
     bubbles.push({ slider, upd });
-    upd();
+    upd(true);
   }
   function updateBubbles() {
     bubbles = bubbles.filter(x => x.slider.isConnected);
-    bubbles.forEach(x => x.upd());
+    bubbles.forEach(x => x.upd(true));
   }
 
   function makeSlider({ id, label, min, max, step, value, onInput }) {
@@ -212,7 +235,7 @@
       const { p, inp } = makeSlider({
         id: 'ax_' + cleanId(a.tag), label: axisLabel(a) + ':',
         min: a.min, max: a.max, step, value: start,
-        onInput: v => { axisVals[a.tag] = axisGlobal[a.tag] = v; applyStyles(); syncInstances(); }
+        onInput: v => { axisVals[a.tag] = axisGlobal[a.tag] = v; queueApply(); }
       });
       axesBox.appendChild(p);
       attachBubble(inp);
@@ -339,7 +362,7 @@
   // an instance button is lit while the sliders are on that instance's values
   function syncInstances() {
     (info.instances || []).forEach((ins, i) => {
-      const cb = $('#inst_' + i);
+      const cb = document.getElementById('inst_' + i);
       if (!cb) return;
       cb.checked = info.axes.every(a => !(a.tag in ins.coords) ||
         Math.abs(axisVals[a.tag] - ins.coords[a.tag]) <= ((a.max - a.min) > 10 ? 0.5001 : 0.0051));
@@ -979,9 +1002,12 @@
     return null;
   }
 
+  let sliderDrag = false;
+  document.addEventListener('pointerdown', e => { if (e.target.type === 'range') sliderDrag = true; }, true);
+  ['pointerup', 'pointercancel'].forEach(t => window.addEventListener(t, () => { sliderDrag = false; }));
   let watchBusy = false;
   async function watchTick() {
-    if (!autoOn || watchBusy || document.hidden) return;
+    if (!autoOn || watchBusy || document.hidden || sliderDrag) return;
     watchBusy = true;
     try {
       for (const rec of fonts.slice()) {
@@ -1137,8 +1163,8 @@
   }, true);
 
   /* =================== Layout controls =================== */
-  sizeIn.addEventListener('input', applyStyles);
-  heightIn.addEventListener('input', applyStyles);
+  sizeIn.addEventListener('input', queueApply);
+  heightIn.addEventListener('input', queueApply);
   attachBubble(sizeIn);
   attachBubble(heightIn);
 
@@ -3112,7 +3138,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   // trackpad's inertia from spinning through all the tabs. Horizontal scrolling (deltaX) is left alone: it scrolls the row.
   let wheelAcc = 0, wheelLast = 0, wheelLock = 0;
   footerEl.addEventListener('wheel', e => {
-    if (e.ctrlKey || e.metaKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // ctrl + wheel = browser zoom
+    if (e.ctrlKey || e.metaKey || e.shiftKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // ctrl + wheel = browser zoom; shift + wheel = scrolls the row sideways
     if (document.querySelector('#testmodal.open, #colormodal.open')) return;
     e.preventDefault();
     const now = performance.now();
@@ -3124,6 +3150,33 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     stepTab(wheelAcc > 0 ? 1 : -1);
     wheelAcc = 0;
     wheelLock = now + 150;
+  }, { passive: false });
+
+  /* Shift + wheel = font size, Shift + Alt + wheel = line height (wheel up = larger).
+     Works anywhere on the page except over the footer (there Shift + wheel keeps scrolling the row sideways).
+     Browsers turn Shift + wheel into a horizontal delta, so whichever delta is bigger is used. */
+  let kwAcc = 0, kwLast = 0;
+  document.addEventListener('wheel', e => {
+    if (!e.shiftKey || e.ctrlKey || e.metaKey) return;
+    if (footerEl.contains(e.target)) return;
+    if (document.querySelector('#testmodal.open, #colormodal.open')) return;
+    const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (!d) return;
+    e.preventDefault();
+    const now = performance.now();
+    if (now - kwLast > 200) kwAcc = 0;
+    kwLast = now;
+    kwAcc += d;
+    const n = Math.trunc(kwAcc / 50);   // one notch of a mouse wheel = 2 steps
+    if (!n) return;
+    kwAcc -= n * 50;
+    const sl = e.altKey ? heightIn : sizeIn;
+    const unit = e.altKey ? 0.02 : 1;
+    const min = parseFloat(sl.min), max = parseFloat(sl.max);
+    const v = Math.min(max, Math.max(min, Math.round((+sl.value - n * unit) * 100) / 100));
+    if (v === +sl.value) return;
+    sl.value = v;
+    sl.dispatchEvent(new Event('input'));
   }, { passive: false });
 
   /* =================== Mouse drag-to-scroll (footer section) =================== */
