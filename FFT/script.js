@@ -22,7 +22,14 @@
   "dark_mode": "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z",
   "light_mode": "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"
 };
-  const icn = n => '<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + MI[n] + '"/></svg>';
+  // icons drawn on a 960 grid (viewBox 0 -960 960 960): inner markup
+  const MIX = {
+    rk_justify: '<path d="m 120,-120 v -80 h 254.57701 v 80 z m 0,-160 v -80 h 254.57701 v 80 z m 0,-160 v -80 h 254.57701 v 80 z m 0,-160 v -80 h 720 v 80 z m 0,-160 v -80 h 720 v 80 z"/><path d="m 538.69884,-99.607086 h 64.16171 V -221.30884 h 32.65169 q 50.00504,0.22833 78.09006,-28.08502 28.08502,-28.31336 28.08502,-77.6334 0,-50.23337 -28.08502,-77.63339 -27.85669,-27.40002 -78.09006,-27.40002 h -96.8134 z m 64.16171,-178.785134 v -96.58507 h 31.05336 q 23.97501,0 33.56502,12.78668 9.81834,12.55834 9.81834,35.62002 0,23.06169 -9.81834,35.62003 -9.59001,12.55834 -33.56502,12.55834 z m 82.20006,178.785134 h 71.24005 l -66.44504,-149.786774 -69.41339,-0.685 z m 111.19841,0 h 64.16171 V -215.82884 l 162.34517,-216.23183 h -73.9801 l -88.13674,128.32343 v -128.32343 h -64.39004 z m 157.77845,0 h 71.92503 L 899.69409,-306.93391 863.16073,-258.5272 Z" transform="scale(0.83005909,1.2047335)"/>',
+    rk_settings: '<path d="m 120,-120 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 720 v 80 z m 0,-160 v -80 h 720 v 80 z"/><path d="m 606,-120 -12,-60 c -8,-3.33333 -15.5,-6.83333 -22.5,-10.5 -7,-3.66667 -14.16667,-8.16667 -21.5,-13.5 l -58,18 -40,-68 46,-40 c -1.33333,-8.66667 -2,-17.33333 -2,-26 0,-8.66667 0.66667,-17.33333 2,-26 l -46,-40 40,-68 58,18 c 7.33333,-5.33333 14.5,-9.83333 21.5,-13.5 7,-3.66667 14.5,-7.16667 22.5,-10.5 l 12,-60 h 80 l 12,60 c 8,3.33333 15.5,6.83333 22.5,10.5 7,3.66667 14.16667,8.16667 21.5,13.5 l 58,-18 40,68 -46,40 c 1.33333,8.66667 2,17.33333 2,26 0,8.66667 -0.66667,17.33333 -2,26 l 46,40 -40,68 -58,-18 c -7.33333,5.33333 -14.5,9.83333 -21.5,13.5 -7,3.66667 -14.5,7.16667 -22.5,10.5 l -12,60 z m 96.5,-143.5 c 15.66667,-15.66667 23.5,-34.5 23.5,-56.5 0,-22 -7.83333,-40.83333 -23.5,-56.5 C 686.83333,-392.16667 668,-400 646,-400 c -22,0 -40.83333,7.83333 -56.5,23.5 -15.66667,15.66667 -23.5,34.5 -23.5,56.5 0,22 7.83333,40.83333 23.5,56.5 15.66667,15.66667 34.5,23.5 56.5,23.5 22,0 40.83333,-7.83333 56.5,-23.5 z"/>'
+  };
+  const icn = n => MIX[n]
+    ? '<svg class="mi" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">' + MIX[n] + '</svg>'
+    : '<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + MI[n] + '"/></svg>';
   // button = text + icon (static markup)
   const setBtn = (b, label, name) => { b.textContent = label; b.insertAdjacentHTML('beforeend', icn(name)); };
 
@@ -94,6 +101,7 @@
   let active = null;
   let guidesOn = false;   // ascender / descender / x-height / cap-height lines
   let gRaf = 0;
+  let justOn = false, jTimer = 0;   // kashida justification (see "Justify" section)
   let counter = 0;
   let colorLine = '';     // 'color: …; background-color: …;' (shown instead of font-size / line-height while Layout Colors is open)
   let colorCss = '';      // text/background colors chosen in the Layout tab (shown in the CSS preview)
@@ -121,8 +129,8 @@
   let lastLay = '', lastVar = null, lastFeat = null, applyRaf = 0;
 
   function updateT3() {
-    const colorMode = tab1Row.classList.contains('colormode');
-    setText(t3, colorMode ? colorLine : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);
+    const colorMode = tab1Row.classList.contains('colormode'), justMode = tab1Row.classList.contains('justmode');
+    setText(t3, colorMode ? colorLine : justMode ? justLine() : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);
   }
 
   // slider events: at most one update per frame
@@ -140,8 +148,10 @@
       target.style.lineHeight = fh + 'em';
     }
 
+    let chg = layoutChanged;
     const v = info.axes.map(a => `"${a.tag}" ${axisVals[a.tag]}`).join(', ');
     if (v !== lastVar) {
+      chg = true;
       lastVar = v;
       target.style.fontVariationSettings = v || 'normal';
       setText(t1, `font-variation-settings: ${v || 'normal'};`);
@@ -153,12 +163,14 @@
     });
     const fset = f.join(', ');
     if (fset !== lastFeat) {
+      chg = true;
       lastFeat = fset;
       target.style.fontFeatureSettings = fset || 'normal';
       setText(t2, `font-feature-settings: ${fset || 'normal'};`);
     }
 
     updateT3();
+    if (justOn && chg) scheduleJust();
     if (glyphOn && layoutChanged) updateGlyphSize();   // glyph size only depends on Size / Height
     scheduleGuides();
   }
@@ -819,6 +831,7 @@
     setStatus(rec.status);
     renderList();
     if (glyphOn) renderGlyphs();
+    if (justOn) scheduleJust();
   }
 
   function removeFont(rec) {
@@ -1565,7 +1578,7 @@
   const ROW_TABS = ['tab1', 'tab2', 'tab3', 'tab5', 'tab6'];
   // containers whose children are laid out as if they were direct children of the tab (display: contents in multirow mode)
   const FLAT = new Set(['layoutbasic', 'colorgroup', 'axesgroup', 'instgroup', 'testgroup', 'wikigroup', 'glyphgroup',
-    'axes', 'features', 'instances', 'fontlist', 'testlist', 'wikilangs', 'colorlist']);
+    'axes', 'features', 'instances', 'fontlist', 'testlist', 'wikilangs', 'colorlist', 'justgroup', 'justsets']);
 
   let wantScroll = null, pendingReveal = null;   // see swapScroll / revealAfterPack
   const REORDER = true;   // false = never move items to fill gaps (original order only)
@@ -1794,6 +1807,7 @@
     glyphBox.style.display = viewGlyph ? 'block' : 'none';
     if (viewGlyph) updateGlyphSize();
     scheduleGuides();
+    if (justOn) scheduleJust();
   }
 
   // "Whole characters": every character of the active font (from its cmap), shown in batches
@@ -2102,19 +2116,519 @@
   });
   // redraw when the text, the layout or the font changes
   new MutationObserver(scheduleGuides).observe(target, { childList: true, subtree: true, characterData: true });
-  if (window.ResizeObserver) new ResizeObserver(() => { scheduleGuides(); if (viewGlyph) updateGlyphSize(); }).observe(target);
+  if (window.ResizeObserver) { let jW = 0; new ResizeObserver(() => { scheduleGuides(); if (viewGlyph) updateGlyphSize(); if (justOn && target.clientWidth !== jW) { jW = target.clientWidth; scheduleJust(); } }).observe(target); }
   window.addEventListener('resize', scheduleGuides);
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', scheduleGuides);
 
   /* =================== Text alignment: Right / Left / Justify (radio buttons; none selected = the text's own alignment) =================== */
   let curAlign = '';
   $$('input[name="align"]').forEach(r => r.addEventListener('click', () => {
+    if (justOn) setJustify(false);   // a picked alignment and kashida justification exclude each other
     if (curAlign === r.value) { r.checked = false; curAlign = ''; }   // click the active one again to go back to the default
     else curAlign = r.value;
     target.classList.remove('al-right', 'al-center', 'al-left', 'al-justify');
     if (curAlign) target.classList.add('al-' + curAlign);
     scheduleGuides();
   }));
+
+  /* =================== Justify with kashida (Raqim Kashida, MIT: https://github.com/aliftype/raqim-kashida) ===================
+     Layout tab: "Justify" turns it on, "Justify Settings" opens the settings.
+     How it works: the library (WebAssembly, loaded the first time Justify is turned on) tells where in a word a kashida (tatweel, U+0640)
+     may be inserted and how good each place is (priority 1 = best ... 9 = worst). For every line of every paragraph the free space left at
+     the end of the line is measured; the lines are then filled with as many tatweels as fit (best places first). What is left over
+     (less than one tatweel, plus the part kept back by "Fill") is spread by the browser's own text-align: justify.
+     The text stays editable: the inserted tatweels are remembered, so an edit is merged back into the original text and the text is justified again.
+     Turning Justify off gives the (edited) original text back. */
+  const JUST_KEY = 'fft-just', JPAT_KEY = 'fft-justpat';
+  const JNAMES = [['arabic-naskh', 'Naskh'], ['arabic-nastaliq', 'Nastaliq'], ['arabic-simple', 'Simple'], ['syriac', 'Syriac']];
+  const JUST_DEF = { set: 'arabic-naskh', fill: 100, prio: 7, word: 3, point: 2, last: false, clean: true };
+  const cleanJust = o => {
+    const d = { ...JUST_DEF };
+    if (!o || typeof o !== 'object') return d;
+    const num = (v, lo, hi, def) => typeof v === 'number' && isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : def;
+    if (typeof o.set === 'string' && o.set.length < 80) d.set = o.set;
+    d.fill = num(o.fill, 0, 100, d.fill); d.prio = num(o.prio, 1, 9, d.prio);
+    d.word = num(o.word, 1, 12, d.word); d.point = num(o.point, 1, 6, d.point);
+    if (typeof o.last === 'boolean') d.last = o.last;
+    if (typeof o.clean === 'boolean') d.clean = o.clean;
+    return d;
+  };
+  let jset = { ...JUST_DEF };
+  try { jset = cleanJust(JSON.parse(localStorage.getItem(JUST_KEY))); } catch (e) {}
+  let customPat = null;   // { name, text }: a .pat file loaded by the user
+  try {
+    const j = JSON.parse(localStorage.getItem(JPAT_KEY));
+    if (j && typeof j.name === 'string' && typeof j.text === 'string' && j.text.length < 2e6) customPat = j;
+  } catch (e) {}
+  if (jset.set === 'custom' && !customPat) jset.set = JUST_DEF.set;
+  const saveJust = () => { try { localStorage.setItem(JUST_KEY, JSON.stringify(jset)); } catch (e) {} };
+
+  const justChk = $('#justifytoggle'), justToggle = $('#justtoggle'), justGroup = $('#justgroup');
+  let kash = null, kashP = null;          // the library module (loaded on first use)
+  const jSets = {};                       // compiled pattern sets by name
+  const jWord = new Map();                // word -> { cl: cleaned word, pts: [{ i, p }] }
+  const jOrig = new Map();                // text node -> its original text
+  const jShown = new Map();               // text node -> { s: the text last written to it, ins: 1 for every inserted tatweel }
+  let jProbe = null;
+
+  // kashida.bundle.js is a classic script (the wasm is embedded in it): import() / fetch() are blocked on file://, a <script> is not
+  function loadKashida() {
+    if (!kashP) {
+      kashP = new Promise((res, rej) => {
+        if (window.Kashida) return res(window.Kashida);
+        const sc = document.createElement('script');
+        sc.src = 'kashida.bundle.js?v=1';
+        sc.onload = () => window.Kashida ? res(window.Kashida) : rej(new Error('kashida.bundle.js loaded but empty'));
+        sc.onerror = () => rej(new Error('kashida.bundle.js not found next to index.html'));
+        document.head.appendChild(sc);
+      }).then(async K => { await K.init(); return K; }).catch(e => { kashP = null; throw e; });
+    }
+    return kashP;
+  }
+  function justLine() { return '/* kashida: ' + (jset.set === 'custom' && customPat ? customPat.name : jset.set) + ', priority <= ' + jset.prio + ', fill ' + jset.fill + '% */ text-align: justify;'; }
+
+  function getJSet() {
+    let name = jset.set;
+    if (name === 'custom' && customPat) {
+      if (!jSets.custom) {
+        try { jSets.custom = kash.compilePatternText(customPat.text); }
+        catch (e) { flash('Bad .pat'); name = JUST_DEF.set; }
+      }
+      if (jSets.custom) return jSets.custom;
+    }
+    if (name === 'custom') name = JUST_DEF.set;
+    if (!jSets[name]) jSets[name] = kash.builtinPatternSet(name) || kash.builtinPatternSet(JUST_DEF.set);
+    return jSets[name];
+  }
+  function jWordInfo(w) {
+    const k = jset.set + (jset.clean ? '1' : '0') + '|' + w;
+    let r = jWord.get(k);
+    if (r) return r;
+    try {
+      const res = kash.findKashidaPoints(w, getJSet(), jset.clean);
+      r = { cl: res[0], pts: (res[1] || []).map(p => ({ i: p.index, p: p.priority })) };
+    } catch (e) { r = { cl: w, pts: [] }; }
+    jWord.set(k, r);
+    return r;
+  }
+
+  const RE_JW = /(?:[\p{Script=Arabic}\p{Script=Syriac}]|\p{Mn}|\u0640)+/gu;   // a run of Arabic / Syriac letters + marks
+  const RE_JA = /[\p{Script=Arabic}\p{Script=Syriac}]/u;
+  const RE_PRES = /[\uFB50-\uFDFF\uFE70-\uFEFF]/;                               // presentation forms: already shaped, left alone
+  const TATWEEL = '\u0640';
+
+  // put the original text back (also used before reading the text on screen)
+  function jRestoreText() {
+    jOrig.forEach((o, n) => {
+      if (!n.isConnected) { jOrig.delete(n); jShown.delete(n); return; }
+      jSyncNode(n);                       // the user may have typed into it
+      o = jOrig.get(n);
+      if (n.nodeValue !== o) n.nodeValue = o;
+      jShown.delete(n);
+    });
+  }
+  // The text of a node was edited since we wrote it: find out what the user changed (common start / end of the old and new text;
+  // the inserted tatweels outside the changed part are still ours) and make the original text follow. Returns the "ins" flags.
+  function jSyncNode(n) {
+    const sh = jShown.get(n), cur = n.nodeValue;
+    if (!sh || cur === sh.s) return sh ? sh.ins : null;
+    const a = sh.s, mx = Math.min(a.length, cur.length);
+    let p = 0, q = 0;
+    while (p < mx && a[p] === cur[p]) p++;
+    while (q < mx - p && a[a.length - 1 - q] === cur[cur.length - 1 - q]) q++;
+    const ins = new Array(cur.length).fill(0);
+    for (let i = 0; i < p; i++) ins[i] = sh.ins[i] || 0;
+    for (let i = 0; i < q; i++) ins[cur.length - 1 - i] = sh.ins[a.length - 1 - i] || 0;
+    let o = '';
+    for (let i = 0; i < cur.length; i++) if (!ins[i]) o += cur[i];
+    jOrig.set(n, o);
+    jShown.set(n, { s: cur, ins });
+    return ins;
+  }
+  // a text node -> parts: plain strings and word objects (the word without kashida + the places where a tatweel may go)
+  function jBuild(n) {
+    const s = jOrig.get(n), nd = { node: n, parts: [], words: [], plain: '' };
+    let last = 0, out = '';
+    RE_JW.lastIndex = 0;
+    for (let m; (m = RE_JW.exec(s));) {
+      const w = m[0];
+      if (m.index > last) { const t = s.slice(last, m.index); nd.parts.push(t); out += t; }
+      if (RE_PRES.test(w) || !RE_JA.test(w)) { nd.parts.push(w); out += w; }
+      else {
+        const inf = jWordInfo(w), wo = { cl: inf.cl, pts: inf.pts, start: out.length, add: null, tot: 0 };
+        nd.parts.push(wo); nd.words.push(wo); out += inf.cl;
+      }
+      last = m.index + w.length;
+    }
+    if (last < s.length) { const t = s.slice(last); nd.parts.push(t); out += t; }
+    nd.plain = out;
+    n.nodeValue = out;
+    jShown.set(n, { s: out, ins: [] });
+    return nd;
+  }
+
+  // does a forced line break (<br>) follow this text node?
+  function jHard(n) {
+    let x = n.nextSibling;
+    while (x && x.nodeType === 3 && !/\S/.test(x.nodeValue)) x = x.nextSibling;
+    return !!x && x.nodeName === 'BR';
+  }
+
+  // the width of one tatweel between two letters, measured in this block's font (same units as getBoundingClientRect)
+  function jTatweel(blk) {
+    const p = jProbe || (jProbe = document.createElement('span'));
+    p.style.cssText = 'position:absolute;left:0;top:0;visibility:hidden;white-space:pre;';
+    blk.appendChild(p);
+    p.textContent = '\u0628\u0628';
+    const a = p.getBoundingClientRect().width;
+    p.textContent = '\u0628' + TATWEEL + '\u0628';
+    const b = p.getBoundingClientRect().width;
+    p.remove();
+    return b - a;
+  }
+
+  // available line width of a block (columns: the width of one column) + where the columns are, in getBoundingClientRect units
+  function jGeo(blk) {
+    const box = (el, k) => {
+      const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+      const f = k == null ? (el.offsetWidth ? r.width / el.offsetWidth : 1) : k;
+      const pl = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.borderLeftWidth) || 0);
+      const pr = (parseFloat(cs.paddingRight) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+      return { cs, r, f, pl, pr, w: r.width - (pl + pr) * f };
+    };
+    let el = blk.parentElement, colEl = null;
+    for (; el && el !== target; el = el.parentElement) {
+      const c = getComputedStyle(el).columnCount;
+      if (c !== 'auto' && +c > 1) { colEl = el; break; }
+    }
+    if (colEl) {
+      const b = box(colEl), n = +b.cs.columnCount;
+      const gap = parseFloat(b.cs.columnGap) || parseFloat(b.cs.fontSize) || 0;
+      const colW = (b.w / b.f - (n - 1) * gap) / n * b.f;
+      return { avail: colW, step: (colW + gap * b.f), x0: b.r.left + b.pl * b.f };
+    }
+    return { avail: box(blk).w, step: 0, x0: 0 };
+  }
+
+  // one box per measurable piece of text: a word-like token (non-space run), with its position
+  function jBoxes(nds) {
+    const range = document.createRange(), out = [];
+    nds.forEach(nd => {
+      const s = nd.node.nodeValue, hard = jHard(nd.node), endAt = s.trimEnd().length;
+      for (const m of s.matchAll(/\S+/g)) {
+        range.setStart(nd.node, m.index); range.setEnd(nd.node, m.index + m[0].length);
+        const rs = [...range.getClientRects()].filter(r => r.width > 0.01 && r.height > 0.01);
+        if (!rs.length) continue;
+        const tok = { nd, start: m.index, end: m.index + m[0].length, hard: hard && m.index + m[0].length === endAt };
+        const cy0 = (rs[0].top + rs[0].bottom) / 2, broken = rs.some(r => Math.abs((r.top + r.bottom) / 2 - cy0) > r.height * 0.6);
+        if (broken) {   // a token that wraps by itself (very long word / url): its pieces count for the lines but never get kashida
+          rs.forEach(r => out.push({ tok, l: r.left, r: r.right, cy: (r.top + r.bottom) / 2, h: r.height, elig: false }));
+        } else {
+          out.push({
+            tok, l: Math.min(...rs.map(r => r.left)), r: Math.max(...rs.map(r => r.right)),
+            cy: cy0, h: rs[0].height, elig: true
+          });
+        }
+      }
+    });
+    return out;
+  }
+  function jCluster(boxes, geo) {
+    const items = boxes.map(b => ({ ...b, col: geo.step ? Math.floor(((b.l + b.r) / 2 - geo.x0) / geo.step) : 0 }));
+    items.sort((a, b) => a.col - b.col || a.cy - b.cy);
+    const cl = [];
+    items.forEach(it => {
+      const c = cl[cl.length - 1];
+      if (c && c.col === it.col && Math.abs(it.cy - c.cy) < it.h * 0.6) {
+        c.items.push(it); c.l = Math.min(c.l, it.l); c.r = Math.max(c.r, it.r);
+      } else cl.push({ col: it.col, cy: it.cy, items: [it], l: it.l, r: it.r });
+    });
+    return cl;
+  }
+
+  // look at the block as it is (plain text, no kashida) and note the free space of every line
+  function jAnalyse(blk, nds) {
+    const boxes = jBoxes(nds);
+    if (!boxes.length) return null;
+    const tw = jTatweel(blk);
+    if (!(tw > 0.5)) return null;
+    const geo = jGeo(blk), clusters = jCluster(boxes, geo);
+    const lastTok = boxes[boxes.length - 1].tok;
+    const margin = Math.max(1.5, tw * 0.03);   // safety: a line filled to the last pixel could wrap because of rounding
+    clusters.forEach(c => {
+      c.slack = geo.avail - (c.r - c.l) - margin;
+      const last = c.items.some(i => i.tok === lastTok), hard = c.items.some(i => i.tok.hard);
+      c.skip = ((last || hard) && !jset.last) || c.items.some(i => !i.elig);
+      c.words = [];
+      c.items.forEach(i => {
+        if (!i.elig) return;
+        i.tok.nd.words.forEach(w => { if (w.start >= i.tok.start && w.start < i.tok.end) c.words.push(w); });
+      });
+    });
+    return { clusters, tw, count: clusters.length };
+  }
+
+  // give n tatweels to the places of these words: best priority first, then the next one; at most "per point" at one place and
+  // "per word" in one word
+  function jAlloc(words, n) {
+    const cand = [];
+    words.forEach((w, wi) => w.pts.forEach(p => {
+      if (p.p <= jset.prio) cand.push({ w, i: p.i, p: p.p, o: (wi * 7919 + p.i * 104729) % 997, cnt: 0 });
+    }));
+    if (!cand.length) return;
+    cand.sort((a, b) => a.p - b.p || a.o - b.o);   // "o" spreads equal priorities over the line
+    const tiers = [...new Set(cand.map(c => c.p))];
+    for (const tier of tiers) {
+      for (let r = 1; r <= jset.point && n > 0; r++) {
+        for (const c of cand) {
+          if (n <= 0) break;
+          if (c.p !== tier || c.cnt >= r || c.w.tot >= jset.word) continue;
+          c.cnt++; c.w.tot++; n--;
+          (c.w.add || (c.w.add = {}))[c.i] = c.cnt;
+        }
+      }
+    }
+  }
+  // the text of a node with its tatweels, and which characters are inserted ones
+  function jNodeText(nd) {
+    let s = '';
+    const ins = [];
+    nd.parts.forEach(p => {
+      if (typeof p === 'string') { s += p; for (let i = 0; i < p.length; i++) ins.push(0); return; }
+      for (let i = 0; i < p.cl.length; i++) {
+        s += p.cl[i]; ins.push(0);
+        const k = p.add && p.add[i];
+        for (let j = 0; j < (k || 0); j++) { s += TATWEEL; ins.push(1); }
+      }
+    });
+    return { s, ins };
+  }
+  function jApply(nds, base, fac) {
+    nds.forEach(nd => nd.words.forEach(w => { w.add = null; w.tot = 0; }));
+    const fill = jset.fill / 100 * fac;
+    base.clusters.forEach(c => {
+      if (c.skip || !c.words.length) return;
+      const n = Math.floor(c.slack * fill / base.tw);
+      if (n > 0) jAlloc(c.words, n);
+    });
+    nds.forEach(nd => {
+      if (!nd.words.length) return;
+      const t = jNodeText(nd);
+      nd.node.nodeValue = t.s;
+      jShown.set(nd.node, t);
+    });
+  }
+
+  function jBlock(blk, nds) {
+    const base = jAnalyse(blk, nds);
+    if (!base) return;
+    let fac = 1;
+    for (let a = 0; a < 4; a++) {
+      jApply(nds, base, fac);
+      // the tatweels must never make a line wrap: if the block got more lines, use fewer tatweels and try again
+      if (jCluster(jBoxes(nds), jGeo(blk)).length <= base.count) return;
+      fac *= 0.7;
+    }
+    nds.forEach(jPlain);
+  }
+  function jPlain(nd) { nd.node.nodeValue = nd.plain; jShown.set(nd.node, { s: nd.plain, ins: [] }); }
+
+  function runJustify() {
+    jTimer = 0;
+    if (!justOn || !kash) return;
+    const box = [testBox, wikiBox].find(b => b.style.display !== 'none');
+    // the caret: remembered as "n-th real character of its text node" (inserted tatweels don't count), put back afterwards
+    let caret = null;
+    const sel = window.getSelection();
+    if (box && sel && sel.rangeCount && sel.isCollapsed && sel.anchorNode && sel.anchorNode.nodeType === 3 && box.contains(sel.anchorNode)) {
+      const ins = jSyncNode(sel.anchorNode);
+      let L = sel.anchorOffset;
+      if (ins) for (let i = 0; i < sel.anchorOffset; i++) if (ins[i]) L--;
+      caret = { n: sel.anchorNode, L };
+    }
+    jRestoreText();
+    if (!box || viewGlyph) return;
+    target.classList.remove('kjust');   // measure the lines as they are, not already stretched
+    try {
+      const ch = active && active.info && active.info.chars;
+      if (ch && !ch.includes(0x640)) {
+        if (active.noTat !== true) { active.noTat = true; flash('No tatweel'); }   // without U+0640 in the font the kashida would come from another font
+        return;
+      }
+      const blocks = new Map(), tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      for (let n; (n = tw.nextNode());) {
+        const pe = n.parentElement;
+        if (!pe || !/\S/.test(n.nodeValue) || pe.closest('.sizelabel, #guidesvg, .wikihint, .slider-value')) continue;
+        if (!jOrig.has(n)) jOrig.set(n, n.nodeValue);
+        const blk = pe.closest('p, li, div') || pe;
+        if (!blocks.has(blk)) blocks.set(blk, []);
+        blocks.get(blk).push(jBuild(n));
+      }
+      blocks.forEach((nds, blk) => { try { jBlock(blk, nds); } catch (e) { console.error(e); nds.forEach(jPlain); } });
+    } finally {
+      target.classList.add('kjust');
+      if (caret && caret.n.isConnected) {
+        const sh = jShown.get(caret.n);
+        let off = 0, k = 0;
+        if (sh) { while (off < sh.s.length && k < caret.L) { if (!sh.ins[off]) k++; off++; } }
+        else off = Math.min(caret.L, caret.n.nodeValue.length);
+        try { window.getSelection().collapse(caret.n, off); } catch (e) {}
+      }
+      scheduleGuides();
+    }
+  }
+  function scheduleJust() {
+    if (!justOn) return;
+    clearTimeout(jTimer);
+    jTimer = setTimeout(runJustify, 120);
+  }
+
+  async function setJustify(on) {
+    justChk.checked = on;
+    if (on) {
+      if (curAlign) {   // a picked alignment would fight with the justification
+        $$('input[name="align"]').forEach(r => { r.checked = false; });
+        curAlign = '';
+        target.classList.remove('al-right', 'al-center', 'al-left', 'al-justify');
+      }
+      try { kash = await loadKashida(); }
+      catch (e) { console.error(e); justChk.checked = false; flash('Load failed'); return; }
+      if (!justChk.checked) return;   // turned off while the library was loading
+      justOn = true;
+      runJustify();
+    } else {
+      justOn = false;
+      clearTimeout(jTimer); jTimer = 0;
+      jRestoreText(); jOrig.clear(); jShown.clear();
+      target.classList.remove('kjust');
+      scheduleGuides();
+    }
+  }
+  justChk.addEventListener('change', () => setJustify(justChk.checked));
+  // typing: merge the edit and justify again (not in the middle of an IME composition)
+  target.addEventListener('input', e => { if (justOn && !e.isComposing) scheduleJust(); });
+  target.addEventListener('compositionend', () => scheduleJust());
+
+  /* --- Justify Settings (sub-menu of the Layout tab) --- */
+  justToggle.addEventListener('click', () => {
+    const before = secEl().scrollLeft;
+    const on = tab1Row.classList.toggle('justmode');
+    justToggle.classList.toggle('on', on);
+    slideIn($(on ? '#justgroup' : '#layoutbasic'));
+    updateT3();
+    on ? swapScroll('tab1', 'just', before) : swapScroll('just', 'tab1', before);
+    requestAnimationFrame(updateBubbles);
+  });
+
+  const justChanged = () => { saveJust(); jWord.clear(); updateT3(); scheduleJust(); };
+  const justSetsEl = document.createElement('div');
+  justSetsEl.id = 'justsets';
+  const jSliders = {}, jChecks = {};
+
+  function renderJustSets() {
+    justSetsEl.textContent = '';
+    const mk = (code, label, title, removable) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip outline' + (jset.set === code ? ' active' : '');
+      const nb = document.createElement('button');
+      nb.type = 'button'; nb.className = 'chipname' + (removable ? '' : ' nox');
+      nb.textContent = shorten(label, CHIP_MAX); nb.title = title;
+      nb.addEventListener('click', () => { jset.set = code; renderJustSets(); justChanged(); });
+      chip.appendChild(nb);
+      if (removable) {
+        const xb = document.createElement('button');
+        xb.type = 'button'; xb.className = 'chipx'; xb.innerHTML = icn('close'); xb.title = 'Remove this pattern file';
+        xb.addEventListener('click', () => {
+          customPat = null; delete jSets.custom;
+          try { localStorage.removeItem(JPAT_KEY); } catch (e) {}
+          if (jset.set === 'custom') jset.set = JUST_DEF.set;
+          renderJustSets(); justChanged();
+        });
+        chip.appendChild(xb);
+      }
+      justSetsEl.appendChild(chip);
+    };
+    JNAMES.forEach(([code, label]) => mk(code, label, 'Raqim Kashida pattern set: ' + code, false));
+    if (customPat) mk('custom', customPat.name, 'Your pattern file: ' + customPat.name, true);
+  }
+
+  function buildJustUI() {
+    justGroup.textContent = '';
+    renderJustSets();
+    justGroup.appendChild(justSetsEl);
+
+    // own .pat file
+    const patBtn = document.createElement('button');
+    patBtn.type = 'button'; patBtn.className = 'btn';
+    setBtn(patBtn, 'Pattern', 'folder_open');
+    patBtn.title = 'Load your own pattern file (.pat, the Raqim Kashida pattern format)';
+    const patIn = document.createElement('input');
+    patIn.type = 'file'; patIn.accept = '.pat,.txt,text/plain'; patIn.hidden = true;
+    patBtn.addEventListener('click', () => patIn.click());
+    patIn.addEventListener('change', async () => {
+      const f = patIn.files[0]; patIn.value = '';
+      if (!f) return;
+      try {
+        const text = await f.text();
+        kash = await loadKashida();
+        const set = kash.compilePatternText(text);   // throws when the file is not a valid pattern file
+        customPat = { name: f.name, text };
+        jSets.custom = set; jset.set = 'custom';
+        try { localStorage.setItem(JPAT_KEY, JSON.stringify(customPat)); } catch (e) {}
+        renderJustSets(); justChanged();
+        flash('Loaded');
+      } catch (e) { console.error(e); flash('Bad .pat'); }
+    });
+    justGroup.append(patBtn, patIn);
+
+    const slider = (key, label, min, max, fmt, title) => {
+      const { p, inp } = makeSlider({
+        id: 'just_' + key, label: label + ':', min, max, step: 1, value: jset[key],
+        onInput: v => { jset[key] = v; justChanged(); }
+      });
+      p.title = title;
+      justGroup.appendChild(p);
+      attachBubble(inp, fmt);
+      jSliders[key] = inp;
+    };
+    slider('fill', 'Fill', 0, 100, v => v + '%', 'How much of the free space of a line is filled with kashida. The rest (and whatever is smaller than one kashida) is spread between the words.');
+    slider('prio', 'Quality', 1, 9, null, 'Worst kashida place that may be used (1 = only the best places ... 9 = every place the pattern knows). Lines that cannot be filled with the allowed places keep more word spacing.');
+    slider('word', 'Per word', 1, 12, null, 'At most this many kashidas in one word');
+    slider('point', 'Per point', 1, 6, null, 'At most this many kashidas at one place (the elongation of one joint)');
+
+    const chk = (key, label, title) => {
+      const p = document.createElement('p'); p.className = 'font-slider';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'hidden'; cb.id = 'just_' + key; cb.autocomplete = 'off'; cb.checked = jset[key];
+      cb.addEventListener('change', () => { jset[key] = cb.checked; justChanged(); });
+      const lb = document.createElement('label'); lb.htmlFor = cb.id; lb.textContent = label; lb.title = title;
+      p.append(cb, lb);
+      justGroup.appendChild(p);
+      jChecks[key] = cb;
+    };
+    chk('last', 'Last lines', 'Also fill the last line of a paragraph and the lines that end with a line break (with kashida only)');
+    chk('clean', 'Replace kashida', 'Remove the kashidas that are already in the text before adding new ones (otherwise they stay where they are)');
+
+    const rst = document.createElement('button');
+    rst.type = 'button'; rst.className = 'btn';
+    rst.innerHTML = icn('restart_alt'); rst.title = 'Reset the justification settings to their defaults';
+    rst.addEventListener('click', () => { setJustSettings(JUST_DEF); flash('Reset'); });
+    justGroup.appendChild(rst);
+
+    const a = document.createElement('a');
+    a.className = 'jcredit'; a.href = 'https://github.com/aliftype/raqim-kashida'; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Raqim Kashida · MIT';
+    justGroup.appendChild(a);
+  }
+  // used by Reset and by the backup import: apply a whole settings object to the controls
+  function setJustSettings(o) {
+    jset = cleanJust(o);
+    if (jset.set === 'custom' && !customPat) jset.set = JUST_DEF.set;
+    Object.keys(jSliders).forEach(k => { jSliders[k].value = jset[k]; jSliders[k].dispatchEvent(new Event('input')); });
+    Object.keys(jChecks).forEach(k => { jChecks[k].checked = jset[k]; });
+    renderJustSets(); justChanged();
+  }
+  buildJustUI();
 
   /* =================== Toast =================== */
   const toast = $('#div2');
@@ -2555,6 +3069,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     else showPlain(testBox, t.text);
     renderTests();
     updateAbout();
+    if (justOn) scheduleJust();
   }
 
   // Always alphabetical: Latin names first (A→Z), then Arabic-script names (Arabic/Persian alphabet)
@@ -2616,7 +3131,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       return o;
     });
     const feats = customFeats.map(f => ({ tag: f.tag, on: f.on }));
-    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors, scale: uiScale, rows: frows, hoverTabs: hoverTabs.checked };
+    const settings = { dark: neg.checked, autoReload: autoOn, wikiLang: wikiLangIn.value.trim().toLowerCase(), themeColors, scale: uiScale, rows: frows, hoverTabs: hoverTabs.checked, justify: jset };
     const data = JSON.stringify({ app: 'FFT', version: 1, settings, tests: out, features: feats, colors: colors.map(cleanColor) }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -2676,6 +3191,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       try { localStorage.setItem(HOVER_KEY, st.hoverTabs ? '1' : '0'); } catch (e) {}
       n++;
     }
+    if (st.justify && typeof st.justify === 'object') { setJustSettings(st.justify); n++; }
     return n;
   }
 
@@ -2759,6 +3275,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   const closeModal = () => modal.classList.remove('open');
 
   function currentText() {
+    if (justOn) { jRestoreText(); scheduleJust(); }   // the text on screen carries kashidas: take the original
     const raw = testBox.querySelector('.layout') ? testBox.innerText : (boxP(testBox) ? boxP(testBox).innerText : '');
     return raw.replace(/\u00a0/g, ' ').trim();
   }
@@ -3101,7 +3618,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   function stepMenu(dir) {
     const id = checkedTab();
     if (dir > 0) {
-      if (id === 'tab1' && !$('.pc-tab section .tab1').classList.contains('colormode')) { colorToggle.click(); return true; }
+      if (id === 'tab1' && !tab1Row.classList.contains('colormode') && !tab1Row.classList.contains('justmode')) { colorToggle.click(); return true; }
       if (id === 'tab2' && !tab2Row.classList.contains('instmode')) { instToggle.click(); return true; }
       if (id === 'tab6') {
         if (!wikiOn && !glyphOn) { wikiToggle.click(); return true; }       // Test -> Wiki
@@ -3230,14 +3747,14 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   backBar.id = 'backbar'; backBar.type = 'button'; backBar.innerHTML = icn('expand_more'); backBar.title = 'Back';
   footBar.appendChild(backBar);
   const tabRowIn = (id) => {
-    if (id === 'tab1') return $('.pc-tab section .tab1').classList.contains('colormode') ? colorToggle : null;
+    if (id === 'tab1') return tab1Row.classList.contains('colormode') ? colorToggle : tab1Row.classList.contains('justmode') ? justToggle : null;
     if (id === 'tab2') return tab2Row.classList.contains('instmode') ? instToggle : null;
     if (id === 'tab6') return wikiOn ? wikiToggle : glyphOn ? glyphToggle : null;
     return null;
   };
   const checkedTab = () => ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].find(id => document.getElementById(id).checked);
   const syncBack = () => footBar.classList.toggle('submenu', !!tabRowIn(checkedTab()));
-  const subGroup = id => id === 'tab1' ? $('#colorgroup') : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');
+  const subGroup = id => id === 'tab1' ? (tab1Row.classList.contains('justmode') ? $('#justgroup') : $('#colorgroup')) : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');
   // back: the open sub-menu slides down and away, then the normal row of the tab comes back
   let finishBack = null;   // finishes the running "back" animation at once
   backBar.addEventListener('click', () => {

@@ -1441,7 +1441,7 @@ header { padding-bottom: calc(8px + var(--fextra)); }
 .ugroup { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 8px; white-space: nowrap; }
 body.multirow #layoutbasic, body.multirow #colorgroup,
 body.multirow #axesgroup, body.multirow #instgroup,
-body.multirow #testgroup, body.multirow #wikigroup, body.multirow #glyphgroup { display: contents; }
+body.multirow #testgroup, body.multirow #wikigroup, body.multirow #glyphgroup, body.multirow #justgroup { display: contents; }
 body.multirow #tab1:checked ~ section .tab1,
 body.multirow #tab2:checked ~ section .tab2,
 body.multirow #tab3:checked ~ section .tab3,
@@ -1468,8 +1468,8 @@ body.multirow #tab6:checked ~ section {
 }
 /* every item (direct child of a row container) takes one line of --rowh: 32px + 2px margin above and below */
 body.multirow section > :is(.tab1, .tab2, .tab3, .tab5, .tab6) > *:not(.right-side-header):not(.status):not(.vsep),
-body.multirow :is(#layoutbasic, #colorgroup, #axesgroup, #instgroup, #testgroup, #wikigroup, #glyphgroup,
-  #axes, #features, #instances, #fontlist, #testlist, #wikilangs, #colorlist) > *:not(.right-side-header):not(.status):not(.vsep) {
+body.multirow :is(#layoutbasic, #colorgroup, #axesgroup, #instgroup, #testgroup, #wikigroup, #glyphgroup, #justgroup,
+  #axes, #features, #instances, #fontlist, #testlist, #wikilangs, #colorlist, #justsets) > *:not(.right-side-header):not(.status):not(.vsep) {
   min-height: 32px;
   margin-block: 2px;
   flex: 0 0 auto;
@@ -1586,3 +1586,26 @@ body.tabdrag .pc-tab nav label { -webkit-user-select: none; user-select: none; }
 /* the logo is heavy: a little transparent, full strength on hover */
 .about-logo .FFT-logo { opacity: .75; transition: opacity .15s; }
 .about-logo:hover .FFT-logo { opacity: 1; }
+
+
+/* =================== Justify (kashida, Raqim Kashida) =================== */
+/* the Justify Settings sub-menu works like Layout Settings / Instances: it replaces the normal Layout row */
+#justgroup {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 14px;
+}
+#justsets { display: contents; }
+#justgroup > .font-slider { padding-left: 0; padding-right: 0; }
+.tab1:not(.justmode) #justgroup { display: none; }
+.tab1.justmode #layoutbasic,
+.tab1.justmode #colortoggle,
+.tab1.justmode #justtoggle { display: none; }
+.jcredit { flex: 0 0 auto; white-space: nowrap; }
+
+/* kashida justification is on: every block is justified (a picked alignment would be overridden, so picking one turns Justify off). */
+.dynamic.kjust :is(p, div, ol, li):not(.sizelabel) { text-align: justify !important; }
+
+/* the two Raqim Kashida buttons: icon only, same look as the alignment buttons */
+#rkgroup .btn { padding: 6px 10px; }

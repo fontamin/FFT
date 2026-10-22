@@ -7,8 +7,8 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Fontamin Font Tester</title>
-      <link rel="stylesheet" href="style.css?v=1.5">
-      <script src="script.js?v=1.51" defer></script>
+      <link rel="stylesheet" href="style.css?v=1.6">
+      <script src="script.js?v=1.52" defer></script>
    </head>
    <body spellcheck="false">
       <script>try{if(localStorage.getItem("fft-dark")==="1")document.body.classList.add("darkmode")}catch(e){}</script>
@@ -66,6 +66,12 @@
                   </div>
                   <p class="font-slider"><input class="hidden" type="checkbox" id="outline" autocomplete="off"><label for="outline">Outline</label></p>
                   <p class="font-slider"><input class="hidden" type="checkbox" id="guidetoggle" autocomplete="off"><label for="guidetoggle" title="Show ascender, descender, x-height and cap-height lines">Guides</label></p>
+                  <span class="vsep" aria-hidden="true"></span>
+                  <div class="aligns" id="rkgroup">
+                     <input class="hidden" type="checkbox" id="justifytoggle" autocomplete="off"><label for="justifytoggle" title="Justify with kashida (Raqim Kashida): tatweels are added at good places so every line fills the width. Click again to go back to the normal text."><svg class="mi" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m 358.91914,-99.607086 h 87.1505 V -221.30884 h 44.3506 c 45.28105,0.15222 80.63748,-9.20945 106.0693,-28.08502 25.43182,-18.87557 38.14772,-44.75337 38.14772,-77.6334 0,-33.48891 -12.7159,-59.36671 -38.14772,-77.63339 -25.22506,-18.26668 -60.58149,-27.40002 -106.0693,-27.40002 h -131.5011 z m 87.1505,-178.785134 v -96.58507 h 42.1796 c 21.71008,0 36.90714,4.26223 45.59118,12.78668 8.8908,8.37223 13.3362,20.24557 13.3362,35.62002 0,15.37446 -4.4454,27.2478 -13.3362,35.62003 -8.68404,8.37223 -23.8811,12.55834 -45.59118,12.55834 z m 111.65188,178.785134 h 96.76496 l -90.25192,-149.786774 -94.28383,-0.685 z m 156.23602,0 h 87.15049 V -215.82884 L 1021.6206,-432.06067 H 921.13382 l -119.71565,128.32343 v -128.32343 h -87.46063 z m 214.30959,0 h 97.69537 L 854.45282,-306.93391 804.82976,-258.5272 Z m -783.69911,-6e-6 v -66.404728 h 126.48396 v 66.404728 z m 0,-132.809458 v -66.40472 h 126.48396 v 66.40472 z m 0,-132.80945 v -66.40473 h 126.48396 v 66.40473 z m 0,-132.80946 v -66.40473 h 867.40808 v 66.40473 z m 0,-132.80945 v -66.40473 h 867.40808 v 66.40473 z" transform="scale(0.83005909,1.2047335)"/></svg></label>
+                     <button type="button" id="justtoggle" class="btn" title="Justify settings (Raqim Kashida)"><svg class="mi" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m 120,-120 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 273.31888 v 80 z m 0,-160 v -80 h 720 v 80 z m 0,-160 v -80 h 720 v 80 z"/><path d="m 606,-120 -12,-60 c -8,-3.33333 -15.5,-6.83333 -22.5,-10.5 -7,-3.66667 -14.16667,-8.16667 -21.5,-13.5 l -58,18 -40,-68 46,-40 c -1.33333,-8.66667 -2,-17.33333 -2,-26 0,-8.66667 0.66667,-17.33333 2,-26 l -46,-40 40,-68 58,18 c 7.33333,-5.33333 14.5,-9.83333 21.5,-13.5 7,-3.66667 14.5,-7.16667 22.5,-10.5 l 12,-60 h 80 l 12,60 c 8,3.33333 15.5,6.83333 22.5,10.5 7,3.66667 14.16667,8.16667 21.5,13.5 l 58,-18 40,68 -46,40 c 1.33333,8.66667 2,17.33333 2,26 0,8.66667 -0.66667,17.33333 -2,26 l 46,40 -40,68 -58,-18 c -7.33333,5.33333 -14.5,9.83333 -21.5,13.5 -7,3.66667 -14.5,7.16667 -22.5,10.5 l -12,60 z m 96.5,-143.5 c 15.66667,-15.66667 23.5,-34.5 23.5,-56.5 0,-22 -7.83333,-40.83333 -23.5,-56.5 C 686.83333,-392.16667 668,-400 646,-400 c -22,0 -40.83333,7.83333 -56.5,23.5 -15.66667,15.66667 -23.5,34.5 -23.5,56.5 0,22 7.83333,40.83333 23.5,56.5 15.66667,15.66667 34.5,23.5 56.5,23.5 22,0 40.83333,-7.83333 56.5,-23.5 z"/></svg></button>
+                  </div>
+				  <span class="vsep" aria-hidden="true"></span>
                   </div>
                   <div id="colorgroup">
                   <div class="ugroup">
@@ -99,6 +105,7 @@
                   <button type="button" id="coloradd" class="btn" title="Add a new color pair to the list"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
                   <button type="button" id="colorreset" class="btn" title="Add back the built-in colors that are missing"><svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91z"/></svg></button>
                   </div>
+                  <div id="justgroup"></div>
                   <button type="button" id="colortoggle" class="btn outline" title="Show / hide the layout settings">Layout Settings<svg class="mi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg></button>
                   <p class="right-side-header" id="text3"></p>
                </div>
@@ -127,7 +134,7 @@
                      <a class="about-logo" href="https://github.com/fontamin/FFT" target="_blank" rel="noopener" title="FFT"><svg class="FFT-logo" viewBox="0 0 61.228024 36.548746" role="img" aria-label="FFT"><path transform="translate(-22.148131,-258.31264)" fill="currentColor" d="m 27.982846,264.67575 v 4.51832 l 2.632812,1.0586 v 12.66869 l -2.632812,1.05859 v 4.51832 h 12.781255 v -4.61207 l -4.50977,-1.05664 v -3.3717 h 2.49805 l 1.05859,2.50781 h 4.16797 v -9.59058 h -4.17383 l -1.05664,2.57618 h -2.49414 v -4.60681 h 9.97461 v 12.5769 l -2.63281,1.05859 v 4.51832 h 12.7832 v -4.61207 l -4.50977,-1.05664 v -3.3717 h 2.5 l 1.05664,2.50781 h 4.16993 v -9.59058 h -4.17383 l -1.0586,2.57618 h -2.49414 v -4.60681 h 9.97461 v 12.5769 l -2.63281,1.05859 v 4.51832 h 12.7832 v -4.61207 l -4.50976,-1.05664 v -12.4851 h 4.20508 l 1.05664,4.29687 h 4.79492 v -9.96558 z"/></svg></a>
                      <span class="about-rule" aria-hidden="true"></span>
                      <div class="about-text">
-                        <div class="about-title"><b>Fontamin Font Tester</b><span class="about-ver">v1.41</span></div>
+                        <div class="about-title"><b>Fontamin Font Tester</b><span class="about-ver">v1.5</span></div>
                         <div class="about-sub">Loaded fonts are not saved. Refresh clears them.</div>
                      </div>
                   </div>
