@@ -1609,3 +1609,22 @@ body.tabdrag .pc-tab nav label { -webkit-user-select: none; user-select: none; }
 
 /* the two Raqim Kashida buttons: icon only, same look as the alignment buttons */
 #rkgroup .btn { padding: 6px 10px; }
+
+
+/* =================== Smooth light / dark switch =================== */
+/* Only active for a moment after the dark/light button is pressed (class themefade, set from script.js),
+   so sliders and live color pickers are not slowed down. Change .45s to make it faster / slower (keep fadeTimer in script.js a bit longer). */
+html.themefade,
+html.themefade *,
+html.themefade *::before,
+html.themefade *::after {
+  transition:
+    background-color .45s ease,
+    color .45s ease,
+    border-color .45s ease,
+    fill .45s ease,
+    stroke .45s ease,
+    -webkit-text-fill-color .45s ease,
+    opacity .2s,
+    transform .2s !important;
+}

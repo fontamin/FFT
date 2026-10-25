@@ -1183,7 +1183,18 @@
 
   /* =================== Dark mode / outline =================== */
   const neg = $('#negative');
+  // smooth theme switch: a temporary class turns the color transitions on, and is removed when the animation is over
+  let fadeTimer = 0;
+  function fadeTheme() {
+    const root = document.documentElement;
+    root.classList.add('themefade');
+    void root.offsetWidth;   // transitions are active first, then the colors change
+    clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(() => root.classList.remove('themefade'), 700);
+  }
   try { if (localStorage.getItem('fft-dark') === '1') { neg.checked = true; document.body.classList.add('darkmode'); } } catch (e) {}
+  // must be registered before the listeners that change the colors; not for a color preset that flips the mode itself (flipping)
+  neg.addEventListener('change', () => { if (!flipping) fadeTheme(); });
   neg.addEventListener('change', () => {
     document.body.classList.toggle('darkmode', neg.checked);
     try { localStorage.setItem('fft-dark', neg.checked ? '1' : '0'); } catch (e) {}
@@ -1359,7 +1370,7 @@
         nb.type = 'button'; nb.className = 'chipname';
         nb.textContent = shorten(c.name, CHIP_MAX);
         nb.title = c.name + ' (' + mode + ' mode)\n' + FIELDS.map(k => FIELD_LABEL[k].replace(' color', '') + ' ' + c[k]).join(' · ');
-        nb.addEventListener('click', () => setColors(c));
+        nb.addEventListener('click', () => { fadeTheme(); setColors(c); });   // chosen from the list: smooth change
         chip.appendChild(nb);
         const eb = document.createElement('button');
         eb.type = 'button'; eb.className = 'chipe' + (isCoreColor(c) ? ' last' : '');
@@ -1481,7 +1492,7 @@
     if (!cmodal.classList.contains('open')) return;
     cmodal.classList.remove('open');
     cmEditing = null;
-    if (cmPrevState) { forceDark(cmPrevState.dark); paint(cmPrevState.colors); }
+    if (cmPrevState) { fadeTheme(); forceDark(cmPrevState.dark); paint(cmPrevState.colors); }   // back to the old colors: smooth change
   }
   function saveColorModal() {
     const c = {};
@@ -3803,6 +3814,12 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   section.scrollLeft = 0;
 
   addSystemFont();
+  // Raqim Kashida: right after the page starts it is loaded and compiled in the background, so Justify is ready when the button is pressed.
+  // If loading fails (e.g. the file is not next to index.html) this is silent; pressing the button tries again and shows the error.
+  loadKashida().then(K => {
+    kash = K;
+    try { if (jset.set !== 'custom' && !jSets[jset.set]) jSets[jset.set] = K.builtinPatternSet(jset.set); } catch (e) {}
+  }).catch(() => {});
   applyThemeColors();
   renderTests();
   {
