@@ -81,6 +81,10 @@
   .side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-content: start; min-width: 0; }
   .preview { padding: 0; overflow: hidden; background: transparent; outline: 1px dashed var(--line); outline-offset: -1px; }
   .preview iframe { background: var(--panel); }
+  .preview { position: relative; }
+  .nopreview { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; padding: 24px; text-align: center; background: var(--panel); border-radius: 16px; font-size: .9rem; }
+  .nopreview strong { color: var(--accent); }
+  .nopreview code { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code); padding: 2px 6px; border-radius: 6px; }
   .codehead { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
   .codehead .chips { flex: 1; }
   button.copy {
@@ -942,10 +946,12 @@
   window.addEventListener('resize', placeValues);
   const FRAME = 'embed-frame.html?v=1.0-ed7179a4';   // the version is written by build-embed.mjs (a new one = not taken from the cache)
   let timer = 0, lastHash = '', lastOpen = '', openChanged = false;
-  let previewTab = '';   // the tab open in the preview, as it reports it
+  let previewTab = '', noPreviewTimer = 0;   // the tab open in the preview, as it reports it
   window.addEventListener('message', e => {
     const f = $('#preview iframe');
-    if (f && e.source === f.contentWindow && e.data && e.data.fft === 'tab' && typeof e.data.tab === 'string') previewTab = e.data.tab;
+    if (!f || e.source !== f.contentWindow || !e.data) return;
+    if (e.data.fft === 'hello' || e.data.fft === 'tab') { clearTimeout(noPreviewTimer); const m = $('#preview .nopreview'); if (m) m.remove(); }
+    if (e.data.fft === 'tab' && typeof e.data.tab === 'string') previewTab = e.data.tab;
   });
   function update() {
     $('#clight').hidden = $('#tlight').value !== 'custom';
@@ -1001,6 +1007,15 @@
       f.style.cssText = frameCss();
       f.src = FRAME + '#' + ph + '&debug=1';   // debug: the preview shows the technical font errors
       $('#preview').replaceChildren(f);
+      // the frame says hello when it starts; without it, embed-frame.html is missing or broken next to this page
+      clearTimeout(noPreviewTimer);
+      noPreviewTimer = setTimeout(() => {
+        if ($('#preview iframe') !== f) return;
+        const m = document.createElement('div');
+        m.className = 'nopreview'; m.setAttribute('role', 'status');
+        m.innerHTML = '<strong>The preview didn’t start</strong><span>The files <code>embed-frame.html</code>, <code>.css</code> and <code>.js</code> must be next to this page. In the FFT repository, make them with <code>node embed/build-embed.mjs</code>.</span>';
+        $('#preview').appendChild(m);
+      }, 4000);
     }, 350);
   }
   $('#f').addEventListener('input', update);

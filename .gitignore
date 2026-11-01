@@ -1,1 +1,5 @@
 .DS_Store
+# made by embed/build-embed.mjs; published from FFT-Embed
+embed/embed-frame.html
+embed/embed-frame.css
+embed/embed-frame.js
