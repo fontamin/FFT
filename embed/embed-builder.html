@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embed FFT on your website</title>
+<style>
+  :root {
+    --text: #222222; --bg: #f6f6f6; --panel: #ffffff; --chip: #ececee; --line: #dddddd;
+    --muted: #6b6b6b; --accent: #ff4242; --accent-bg: #ff424222; --on-accent: #000000; --code: #f0f0f0; --track: #cccccc;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: #f5f5f5; --bg: #222222; --panel: #000000; --chip: #1a1a1a; --line: #3a3a3a;
+      --muted: #a0a0a0; --code: #2e2e2e; --track: #333333; color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text); background: var(--bg);
+  }
+  .wrap { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 20px; padding: 20px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 860px) {
+    .wrap { display: flex; flex-direction: column; padding: 12px; gap: 12px; }   /* flex, not grid: sticky needs the whole column */
+    .wrap > .side { display: contents; }
+    .wrap .preview { order: -1; position: sticky; top: 0; z-index: 3; height: 46vh !important; box-shadow: 0 6px 16px rgb(0 0 0 / .12); }
+    .wrap .preview iframe { height: 46vh !important; }
+  }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 16px; font-size: .92rem; }
+  .panel { background: var(--panel); border-radius: 16px; padding: 18px; }
+  .opts { align-self: start; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow: auto; }
+  @media (max-width: 860px) { .opts { position: static; max-height: none; } }
+  fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 14px 0 12px; }
+  legend { font-weight: 600; padding: 0 0 6px; float: left; width: 100%; }
+  fieldset > *:not(legend) { clear: both; }
+  label { display: block; }
+  .hint { color: var(--muted); font-size: .82rem; margin: 4px 0 0; }
+  input[type=text], input[type=url], input[type=number], textarea, select {
+    width: 100%; font: inherit; color: inherit; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  textarea[dir=auto] { unicode-bidi: plaintext; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips label {
+    padding: 5px 12px; border-radius: 999px; background: var(--chip); cursor: pointer; user-select: none; font-size: .9rem;
+  }
+  .chips input:checked + label { background: var(--accent-bg); color: var(--accent); }
+  .chips input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .check { display: flex; gap: 8px; align-items: center; margin-top: 8px; cursor: pointer; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .colors label { font-size: .8rem; color: var(--muted); }
+  .colors .cap { grid-column: 1 / -1; margin: 0; font-weight: 600; color: var(--text); }
+  .colors input { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: none; padding: 2px; }
+  /* sliders: the same as FFT's (thin track, pill thumb in the accent color with the value inside) */
+  .font-slider { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .font-slider > span:first-child { white-space: nowrap; }
+  .font-slider .sw { position: relative; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; height: 20px; }
+  .slider {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    width: 100%; height: 4px; margin: 0; background: var(--track); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  .slider::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--track); }
+  .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 15px; margin-top: -6px; border-radius: 8px; background: var(--accent); cursor: pointer; }
+  .slider::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track); }
+  .slider::-moz-range-thumb { width: 30px; height: 15px; border: none; border-radius: 8px; background: var(--accent); cursor: pointer; }
+  .slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+  .slider-value {
+    position: absolute; top: 55%; transform: translate(-50%, -50%);
+    font: bold 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--on-accent);
+    pointer-events: none; user-select: none;
+  }
+  .side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-content: start; min-width: 0; }
+  .preview { padding: 0; overflow: hidden; background: transparent; outline: 1px dashed var(--line); outline-offset: -1px; }
+  .preview iframe { background: var(--panel); }
+  .codehead { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .codehead .chips { flex: 1; }
+  button.copy {
+    font: inherit; border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer;
+    background: var(--accent-bg); color: var(--accent); font-weight: 600;
+  }
+  button.copy:hover { filter: brightness(.95); }
+  pre {
+    margin: 0; background: var(--code); border-radius: 12px; padding: 12px 14px; overflow-x: auto;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; direction: ltr;
+  }
+  .warn { color: var(--accent); font-size: .85rem; margin: 8px 0 0; }
+  [hidden] { display: none !important; }
+  .btn { font: inherit; font-size: .9rem; border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; background: var(--chip); color: inherit; }
+  .btn:hover { background: var(--line); }
+  .addfont { margin-top: 8px; }
+  .urlrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px; }
+  /* sortable lists (fonts, tests): drag the handle, or focus it and use the arrow keys */
+  .dlist { position: relative; display: grid; gap: 6px; }
+  .dlist:empty { display: none; }
+  .drow {
+    display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px 6px 6px 2px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  }
+  .drow .num { width: 1.6em; text-align: end; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; flex: none; }
+  .drow .main { flex: 1; min-width: 0; }
+  .drow .tn, .drow .sub { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drow .sub { color: var(--muted); font-size: .78rem; unicode-bidi: plaintext; }
+  .drow .src { direction: ltr; text-align: left; }
+  .drow.off .tn { color: var(--muted); text-decoration: line-through; }
+  .drow.editing { border-color: var(--accent); }
+  .drow input[type=text] { padding: 4px 8px; }
+  .drow input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; flex: none; }
+  .drow button { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; padding: 0; }
+  .drow button:hover { background: var(--chip); color: var(--text); }
+  .drow button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .drow .handle { cursor: grab; touch-action: none; border-radius: 8px; width: 24px; height: 34px; }
+  .drow .handle svg { fill: currentColor; stroke: none; }
+  .drow.dragging {
+    position: absolute; left: 0; z-index: 5; pointer-events: none;
+    border: 2px solid var(--accent); background: var(--panel); box-shadow: 0 8px 24px rgb(0 0 0 / .18);
+  }
+  .dph { border: 2px dashed var(--accent); border-radius: 10px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  body.sorting, body.sorting * { cursor: grabbing !important; user-select: none; }
+  .newtest { display: grid; gap: 8px; margin: 0 0 12px; padding: 12px; border-radius: 12px; background: var(--bg); }
+  .newtest input, .newtest textarea { background: var(--panel); }
+  .newtest .hint { margin: 0; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .listtools { margin-bottom: 8px; }
+  .drow .tag { font: 600 .85rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-inline-end: 6px; }
+  .drow .fname { color: var(--muted); font-size: .85rem; }
+  .drow .ftop { display: flex; align-items: baseline; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .drow .state { flex: none; width: auto; height: auto; border-radius: 999px; padding: 3px 10px; font-size: .78rem; background: var(--chip); color: var(--muted); }
+  .drow .state[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent); }
+  .drow .state:hover { background: var(--line); }
+  .drow.missing .ftop::after { content: '· not in your fonts'; margin-inline-start: 6px; font-size: .75rem; color: var(--muted); }
+  .drow .spacer { width: 30px; flex: none; }
+  #feattag.err { outline: 2px solid var(--accent); }
+  .import { border-top: 1px solid var(--line); padding: 12px 0; }
+  .import summary { cursor: pointer; font-weight: 600; }
+  .import[open] summary { margin-bottom: 10px; }
+  .import textarea { min-height: 110px; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-bottom: 8px; }
+  .import .hint.err { color: var(--accent); }
+  .tip { margin-top: 8px; }
+  .drow .b64 { margin-inline-start: 2px; }
+  .disclaimer { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-bg); color: var(--text); font-size: .82rem; }
+  .disclaimer strong { display: block; color: var(--accent); margin-bottom: 2px; }
+  .disclaimer p { margin: 0; }
+  .linkbtn { font: inherit; border: 0; padding: 0; background: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
+  .session { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; background: var(--bg); font-size: .85rem; }
+  .session[hidden] { display: none; }
+  .listtools .btn { padding: 4px 12px; font-size: .82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="panel opts" id="f" autocomplete="off" onsubmit="return false">
+    <h1>Embed the font tester</h1>
+    <p class="lead">Choose what visitors of your website can see and do. The preview updates as you go; copy the code at the end.</p>
+
+    <p class="session" id="session" hidden role="status"><span id="sessionmsg"></span><button type="button" class="linkbtn" id="startover">Start over</button></p>
+
+    <details class="import" id="importbox">
+      <summary>Edit an existing embed</summary>
+      <textarea id="importcode" dir="ltr" spellcheck="false" placeholder="Paste the Script or iframe code of an embed made here"></textarea>
+      <div class="btnrow"><button type="button" class="btn" id="importbtn">Load</button></div>
+      <p class="hint" id="importmsg" role="status"></p>
+    </details>
+
+    <fieldset>
+      <legend>Tabs</legend>
+      <div class="chips" id="tabs"></div>
+      <p class="hint tip" id="onefont" hidden>With one font, the Font tab has nothing to switch. <button type="button" class="linkbtn" id="fontoff">Turn it off</button></p>
+      <label style="margin-top:10px">Opens on
+        <select id="tab"></select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Your fonts</legend>
+      <div id="fontrows" class="dlist"></div>
+      <div class="addfont">
+        <button type="button" class="btn" id="pick">Choose font files</button>
+        <input type="file" id="files" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+      </div>
+      <div class="urlrow">
+        <input type="url" id="url" dir="ltr" placeholder="or a URL: https://example.com/fonts/MyFont.woff2" aria-label="Font URL">
+        <button type="button" class="btn" id="addurl">Add</button>
+      </div>
+      <div class="disclaimer" id="b64note" hidden role="note">
+        <strong>Disclaimer</strong>
+        <p>Base64 can be decoded: a font put in the code this way is not protected from being copied. If your font is commercial and this is a concern, use a version made for testing (for example a subset or a demo version).</p>
+      </div>
+      <p class="hint" id="filehint" hidden>Chosen files are only used in the preview. Press “Add as Base64” to put a file in the code, or upload it to your site and add its URL instead.</p>
+      <p class="hint" id="urlhint" hidden>The preview downloads URL fonts from this page. If one fails here (CORS), it can still work on your site when the font is on the same domain as the page.</p>
+      <p class="hint">The Font tab lists these fonts in this order (drag the handle), with the names you give them (empty = the font’s own name). The first one is shown at start.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Tests</legend>
+      <div class="newtest">
+        <input type="text" id="tname" dir="auto" maxlength="60" placeholder="Name of your test" aria-label="Name of your test">
+        <textarea id="ttext" dir="auto" placeholder="Your text"></textarea>
+        <div class="btnrow">
+          <button type="button" class="btn" id="tadd">Add</button>
+          <button type="button" class="btn" id="treshape">Reshape &amp; add</button>
+          <button type="button" class="btn" id="tcancel" hidden>Cancel</button>
+        </div>
+        <p class="hint">Reshape &amp; add first turns Arabic letters into their presentation forms (isolated, initial, medial, final, lam-alef), in case you use a subset version of a font (for example made with pyftsubset).</p>
+      </div>
+      <div class="btnrow listtools">
+        <button type="button" class="btn" id="tallon">Enable all</button>
+        <button type="button" class="btn" id="talloff">Disable all</button>
+      </div>
+      <div id="testrows" class="dlist"></div>
+      <p class="hint">Drag the handle to change the order (or focus it and use ↑ ↓). Checked tests appear in the Test tab in this order; the first one opens at start.</p>
+      <label class="check"><input type="checkbox" id="edit" checked> Visitors can edit the text</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>OpenType features</legend>
+      <select id="featmode" aria-label="Which OpenType features visitors see">
+        <option value="auto">Each font’s own features</option>
+        <option value="pick">Only the features I choose</option>
+      </select>
+      <div id="featpick" hidden>
+        <div class="urlrow" style="margin:10px 0 8px">
+          <input type="text" id="feattag" dir="ltr" maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Add a feature tag, e.g. ss01" aria-label="Feature tag (4 letters or digits)">
+          <button type="button" class="btn" id="featadd">Add</button>
+        </div>
+        <div class="btnrow listtools">
+          <button type="button" class="btn" id="fallon">Enable all</button>
+          <button type="button" class="btn" id="falloff">Disable all</button>
+        </div>
+        <div id="featrows" class="dlist"></div>
+        <p class="hint" id="feathint">Checked features appear in the OpenType tab. The On / Off button sets how each one starts; visitors can still switch it. Your fonts’ features are listed by themselves; shaping features (init, medi, fina…) start unchecked.</p>
+      </div>
+      <p class="hint" id="featauto">The OpenType tab shows the features of the font on display, with an “All” button for the shaping features.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Theme</legend>
+      <label>Starts in
+        <select id="tstart">
+          <option value="auto">The visitor’s system setting</option>
+          <option value="light">Light mode</option>
+          <option value="dark">Dark mode</option>
+        </select>
+      </label>
+      <div class="row">
+        <label>Light mode<select id="tlight"></select></label>
+        <label>Dark mode<select id="tdark"></select></label>
+      </div>
+      <div class="colors" id="clight" hidden aria-label="Light mode colors"></div>
+      <div class="colors" id="cdark" hidden aria-label="Dark mode colors"></div>
+      <label class="check"><input type="checkbox" id="themetoggle" checked> Show the dark-mode button</label>
+      <label class="check"><input type="checkbox" id="fontname" checked> Show the font name above the text</label>
+      <label class="check"><input type="checkbox" id="info" checked> Show the info line (font details, CSS) at the bottom</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Text</legend>
+      <label class="font-slider"><span>Size:</span><span class="sw"><input class="slider" type="range" id="size" min="10" max="250" step="1" value="26"><span class="slider-value" aria-hidden="true"></span></span></label>
+      <label class="font-slider"><span>Line height:</span><span class="sw"><input class="slider" type="range" id="lh" min="1" max="2" step="0.01" value="1.5"><span class="slider-value" aria-hidden="true"></span></span></label>
+      <label>Alignment
+        <select id="align">
+          <option value="">The text’s own</option><option value="right">Right</option><option value="center">Center</option>
+          <option value="left">Left</option><option value="justify">Justify</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Frame</legend>
+      <label>Width
+        <select id="wmode">
+          <option value="parent">The width of the parent element</option>
+          <option value="fixed">A fixed width</option>
+        </select>
+      </label>
+      <div class="row" id="wfixed" hidden>
+        <label>Width (px)<input type="number" id="width" min="280" max="3000" step="10" value="720"></label>
+        <label>Position
+          <select id="walign"><option value="">Start</option><option value="center">Center</option><option value="end">End</option></select>
+        </label>
+      </div>
+      <p class="hint" id="whint">The tester fills its container and follows it when the page is resized.</p>
+      <div class="row">
+        <label>Height (px)<input type="number" id="height" min="240" max="2000" step="10" value="560"></label>
+        <span></span>
+      </div>
+      <label style="margin-top:8px">Address of the tester
+        <input type="url" id="base" dir="ltr">
+      </label>
+      <p class="hint">Where embed.js and embed-frame.html are hosted. Filled in from this page’s address.</p>
+    </fieldset>
+  </form>
+
+  <div class="side">
+    <div class="panel preview" id="preview"></div>
+    <div class="panel">
+      <div class="codehead">
+        <div class="chips" role="radiogroup" aria-label="Code type">
+          <input type="radio" name="kind" id="k-script" value="script" checked><label for="k-script">Script</label>
+          <input type="radio" name="kind" id="k-iframe" value="iframe"><label for="k-iframe">iframe</label>
+        </div>
+        <button type="button" class="copy" id="copy">Copy code</button>
+      </div>
+      <pre id="code"></pre>
+      <p class="hint" id="kindhint"></p>
+      <p class="warn" id="warn" hidden></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const TABS = [['font', 'Font'], ['layout', 'Layout'], ['test', 'Test'], ['variation', 'Variation'], ['opentype', 'OpenType'], ['about', 'About']];
+  const TESTS = ['Farsi', 'Arabic', 'Quran', 'English'];   // the built-in tests of the embed (embed-frame.js)
+  // same as PRESET_COLORS in script.js
+  const THEMES = {
+    Light:    ['222222', 'f6f6f6', 'ff4242', 'ffffff', 'ececee', 'f0f0f0'],
+    Material: ['1d1b20', 'fef7ff', '6750a4', 'f3edf7', 'e8def8', 'ece6f0'],
+    Yellow:   ['000000', 'ede8e2', '000000', 'efb11e', 'efb11e', 'ede8e2'],
+    Mint:     ['1f3d2b', 'e8f5ec', '2f9e5b', 'dcefe2', 'cfe7d8', 'd8ecdf'],
+    Dark:     ['f5f5f5', '222222', 'ff4242', '000000', '111111', '2e2e2e'],
+    Night:    ['e6e6e6', '000000', 'ffffff', '0a0a0a', '161616', '1a1a1a'],
+    Ocean:    ['d6e6ff', '10233f', '4dabf7', '0b1a30', '17325a', '173055'],
+    Terminal: ['33ff66', '0b0b0b', '33ff66', '000000', '0f1f12', '0f1a11']
+  };
+  const FIELDS = [['text', 'Text'], ['bg', 'Background'], ['accent', 'Accent'], ['footer', 'Menu'], ['chip', 'Buttons'], ['box', 'Boxes']];
+
+  const chip = (box, type, name, value, text, on) => {
+    const id = name + '-' + value.replace(/\W+/g, '');
+    box.insertAdjacentHTML('beforeend', `<input type="${type}" name="${name}" id="${id}" value="${value}"${on ? ' checked' : ''}><label for="${id}"></label>`);
+    box.lastElementChild.textContent = text;
+  };
+  TABS.forEach(([v, t]) => { chip($('#tabs'), 'checkbox', 'tabs', v, t, true); $('#tab').add(new Option(t, v)); });
+  /* --- Tests: the built-in ones and the owner's own, in one ordered list --- */
+  const testList = TESTS.map(name => ({ name, on: true }));   // + { name, text, own: true, on }
+  const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const isDefaultTests = () => testList.length === TESTS.length && testList.every((t, i) => !t.own && t.on && t.name === TESTS[i]);
+  let editing = null;   // the owner's test being edited in the form below the list
+  function renderTestRows() {
+    const box = $('#testrows');
+    box.textContent = '';
+    testList.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'drow' + (t.on ? '' : ' off') + (t === editing ? ' editing' : '');
+      row.dataset.i = i;
+      row.innerHTML = '<span class="num">' + (i + 1) + '.</span>' + handleHtml + '<input type="checkbox" aria-label="Show this test">'
+        + '<div class="main"><span class="tn"></span>' + (t.own ? '<span class="sub"></span>' : '') + '</div>'
+        + (t.own ? '<button type="button" class="edit" title="Edit" aria-label="Edit">' + ICON.edit + '</button>'
+                 + '<button type="button" class="del" title="Remove" aria-label="Remove">' + ICON.del + '</button>' : '');
+      const cb = row.querySelector('input');
+      cb.checked = t.on;
+      cb.addEventListener('change', () => { t.on = cb.checked; row.classList.toggle('off', !t.on); update(); });
+      row.querySelector('.tn').textContent = t.name;
+      if (t.own) {
+        row.querySelector('.sub').textContent = t.text.replace(/\s+/g, ' ').slice(0, 120);
+        row.querySelector('.edit').addEventListener('click', () => startEdit(t));
+        row.querySelector('.del').addEventListener('click', () => {
+          if (editing === t) stopEdit();
+          testList.splice(testList.indexOf(t), 1); renderTestRows();
+        });
+      }
+      box.appendChild(row);
+    });
+    update();
+  }
+  sortable($('#testrows'), testList, renderTestRows);
+  $('#fontoff').addEventListener('click', () => { $('#tabs-font').checked = false; update(); });
+  /* --- OpenType features: automatic, or the owner's list (found in the fonts + added by hand) --- */
+  // the same defaults as script.js (features that are on unless turned off)
+  const FEAT_DEFAULT_ON = new Set(['ccmp', 'locl', 'rlig', 'rvrn', 'abvm', 'blwm', 'abvs', 'blws', 'init', 'medi', 'fina', 'isol',
+    'med2', 'fin2', 'fin3', 'pres', 'psts', 'abvf', 'blwf', 'half', 'haln', 'nukt', 'akhn', 'rphf', 'pref', 'pstf', 'cjct', 'vatu',
+    'ljmo', 'vjmo', 'tjmo', 'kern', 'liga', 'clig', 'calt', 'rclt', 'mark', 'mkmk', 'curs', 'dist']);
+  const featList = [];   // { tag, name, show, on, own (added by hand), found (in the fonts), hidden }
+  let featTouched = false;   // once the list was edited (or loaded), newly found features start unchecked
+  const featCode = f => f.tag + (f.on === FEAT_DEFAULT_ON.has(f.tag) ? '' : f.on ? ':1' : ':0');
+  function renderFeatRows() {
+    const box = $('#featrows');
+    box.textContent = '';
+    if (!featList.length) {
+      box.innerHTML = '<p class="hint" style="margin:0">Add fonts to see their features here, or add a tag above.</p>';
+    }
+    featList.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'drow' + (f.show ? '' : ' off') + (f.own && !f.found ? ' missing' : '');
+      row.innerHTML = '<input type="checkbox" aria-label="Show ' + f.tag + '" style="margin-inline-start:6px">'
+        + '<div class="main"><span class="ftop"><span class="tag"></span><span class="fname"></span></span></div>'
+        + '<button type="button" class="state" title="How it starts"></button>'
+        + (f.own ? '<button type="button" class="del" title="Remove" aria-label="Remove ' + f.tag + '">' + ICON.del + '</button>' : '<span class="spacer"></span>');
+      const cb = row.querySelector('input');
+      cb.checked = f.show;
+      cb.addEventListener('change', () => { f.show = cb.checked; featTouched = true; row.classList.toggle('off', !f.show); update(); });
+      row.querySelector('.tag').textContent = f.tag;
+      row.querySelector('.fname').textContent = f.name && f.name !== f.tag ? f.name : '';
+      const st = row.querySelector('.state');
+      const paint = () => { st.textContent = f.on ? 'On' : 'Off'; st.setAttribute('aria-pressed', String(f.on)); st.setAttribute('aria-label', f.tag + ' starts ' + (f.on ? 'on' : 'off')); };
+      paint();
+      st.addEventListener('click', () => { f.on = !f.on; featTouched = true; paint(); update(); });
+      if (f.own) row.querySelector('.del').addEventListener('click', () => { featList.splice(featList.indexOf(f), 1); featTouched = true; renderFeatRows(); update(); });
+      box.appendChild(row);
+    });
+  }
+  function addFeat() {
+    const inp = $('#feattag'), tag = inp.value.trim();
+    if (!/^[A-Za-z0-9]{4}$/.test(tag)) { inp.classList.add('err'); inp.focus(); setTimeout(() => inp.classList.remove('err'), 1200); return; }
+    const ex = featList.find(f => f.tag === tag);
+    if (ex) ex.show = true;
+    else featList.push({ tag, name: '', show: true, on: true, own: true, found: false, hidden: false });
+    featTouched = true; inp.value = '';
+    renderFeatRows(); update();
+  }
+  $('#featadd').addEventListener('click', addFeat);
+  $('#feattag').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addFeat(); } });
+  const setAllFeats = on => { featList.forEach(f => { f.show = on; }); featTouched = true; renderFeatRows(); update(); };
+  $('#fallon').addEventListener('click', () => setAllFeats(true));
+  $('#falloff').addEventListener('click', () => setAllFeats(false));
+  // the preview reports the features of the fonts (with their names)
+  window.addEventListener('message', e => {
+    const fr = $('#preview iframe');
+    if (!fr || e.source !== fr.contentWindow || !e.data || e.data.fft !== 'features' || !Array.isArray(e.data.list)) return;
+    const seen = new Set();
+    e.data.list.forEach(it => {
+      if (!it || !/^[A-Za-z0-9]{4}$/.test(it.tag)) return;
+      seen.add(it.tag);
+      let f = featList.find(x => x.tag === it.tag);
+      if (!f) {
+        f = { tag: it.tag, show: !featTouched && !it.hidden, on: !!it.on, own: !it.found, found: !!it.found, hidden: !!it.hidden, name: '' };
+        featList.push(f);
+      }
+      f.name = String(it.name || ''); f.found = !!it.found; f.hidden = !!it.hidden;
+      if (f.found) f.own = false;
+    });
+    // features of fonts that were removed go away (the ones added by hand stay)
+    for (let i = featList.length - 1; i >= 0; i--) if (!featList[i].own && !seen.has(featList[i].tag)) featList.splice(i, 1);
+    featList.sort((a, b) => (a.own - b.own) || a.tag.localeCompare(b.tag));
+    renderFeatRows();
+    update();
+  });
+  $('#featmode').addEventListener('change', () => { $('#featpick').hidden = $('#featmode').value !== 'pick'; $('#featauto').hidden = !$('#featpick').hidden; });
+
+  const setAllTests = on => { testList.forEach(t => { t.on = on; }); renderTestRows(); };
+  $('#tallon').addEventListener('click', () => setAllTests(true));
+
+  /* --- load an existing code (Script or iframe) back into the builder --- */
+  function readCode(code) {
+    const doc = new DOMParser().parseFromString(code, 'text/html');
+    const r = { opt: {}, base: '', fonts: [], texts: [], order: null, keep: null };
+    const el = doc.querySelector('[data-fft]'), fr = doc.querySelector('iframe[src]');
+    const bars = v => String(v || '').split('|').map(x => x.trim());
+    if (el) {
+      Object.keys(el.dataset).forEach(k => { if (k !== 'fft' && k !== 'fftDone') r.opt[k.toLowerCase()] = el.dataset[k]; });
+      el.querySelectorAll('template[data-fft-font]').forEach(t => {
+        const url = t.getAttribute('data-url'), label = t.getAttribute('data-label') || '';
+        r.fonts.push(url ? { url, label } : { b64: t.content.textContent.replace(/\s+/g, ''), name: t.getAttribute('data-name') || 'Font', label, previewOnly: t.hasAttribute('data-preview-only') });
+      });
+      const labels = bars(r.opt.label);
+      bars(r.opt.font).forEach((u, i) => { if (u) r.fonts.push({ url: u, label: labels[i] || '' }); });
+      el.querySelectorAll('template[data-fft-text]').forEach(t => r.texts.push({ name: t.getAttribute('data-name') || '', text: t.content.textContent.replace(/^\n+|\s+$/g, '') }));
+      if (r.opt.text) r.texts.push({ name: r.opt.textname || '', text: r.opt.text });
+      if (r.opt.tests) {
+        if (r.opt.tests.includes(',') && !r.opt.tests.includes('|')) r.keep = r.opt.tests.split(',').map(x => x.trim().toLowerCase());   // older codes
+        else r.order = bars(r.opt.tests).filter(Boolean);
+      }
+      r.position = r.opt.position || (/^(start|end)$/.test(r.opt.align || '') ? r.opt.align : '');
+      const sc = doc.querySelector('script[src*="embed.js"]');
+      if (sc) r.base = sc.getAttribute('src').replace(/embed\.js.*$/, '');
+    } else if (fr) {
+      const src = fr.getAttribute('src'), h = src.indexOf('#');
+      const p = new URLSearchParams(h < 0 ? '' : src.slice(h + 1));
+      const q = src.indexOf('?');
+      if (q >= 0) new URLSearchParams(src.slice(q + 1, h < 0 ? undefined : h)).forEach((v, k) => p.append(k, v));
+      p.forEach((v, k) => { if (!(k in r.opt)) r.opt[k] = v; });
+      const labels = p.getAll('label');
+      p.getAll('font').forEach((u, i) => r.fonts.push({ url: u, label: labels[i] || '' }));
+      const names = p.getAll('textname');
+      p.getAll('text').forEach((t, i) => r.texts.push({ name: names[i] || '', text: t }));
+      if (p.getAll('test').length) r.order = p.getAll('test');
+      else if (r.opt.tests) r.keep = r.opt.tests.split(',').map(x => x.trim().toLowerCase());   // older codes
+      r.base = src.slice(0, h < 0 ? (q < 0 ? src.length : q) : h).replace(/[^\/]*$/, '');
+      const st = fr.style;
+      if (st.height && /px$/.test(st.height)) r.opt.height = parseFloat(st.height);
+      if (st.width && /px$/.test(st.width)) r.opt.width = parseFloat(st.width);
+      const ml = fr.getAttribute('style') || '';
+      r.position = /margin-inline:\s*auto/.test(ml) ? 'center' : /margin-inline-start:\s*auto/.test(ml) ? 'end' : '';
+    } else return null;
+    return r;
+  }
+  function b64buf(s) {
+    const bin = atob(s), a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return a.buffer;
+  }
+  function loadCode(code, quiet) {
+    const msg = $('#importmsg');
+    msg.classList.remove('err');
+    let r = null;
+    try { r = readCode(code); } catch (e) { r = null; }
+    if (!r) { if (!quiet) { msg.textContent = 'No embed found: paste the whole Script or iframe code.'; msg.classList.add('err'); } return false; }
+    const o = r.opt, off = k => /^(0|false|no|off)$/i.test(String(o[k] || ''));
+    if (editing) stopEdit();
+    // tabs
+    const tabs = String(o.tabs || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    TABS.forEach(([v]) => { $('#tabs-' + v).checked = !tabs.length || tabs.includes(v); });
+    const on = TABS.map(([v]) => v).filter(v => $('#tabs-' + v).checked);
+    $('#tab').value = on.includes(String(o.tab || '').toLowerCase()) ? o.tab.toLowerCase() : on[0] || 'font';
+    // fonts
+    let bad = 0;
+    fonts.splice(0, fonts.length);
+    r.fonts.forEach(f => {
+      if (f.url) { fonts.push({ kind: 'url', url: f.url, label: f.label }); return; }
+      try { const buf = b64buf(f.b64); fonts.push({ kind: 'file', name: f.name, buf, b64: f.b64, label: f.label, inCode: !f.previewOnly }); } catch (e) { bad++; }
+    });
+    // tests: the order list, then what is left (turned off)
+    const lc = x => x.trim().toLowerCase();
+    const own = r.texts.filter(t => t.text.trim()).map((t, i) => ({ name: (t.name || '').trim() || 'Sample ' + (i + 1), text: t.text, own: true, on: true }));
+    const all = [...own, ...TESTS.map(name => ({ name, on: true }))];
+    let list;
+    if (r.order) {
+      const want = r.order.map(lc);
+      list = [];
+      want.forEach(n => { const t = all.find(x => lc(x.name) === n); if (t && !list.includes(t)) list.push(t); });
+      all.forEach(t => { if (!list.includes(t)) { t.on = false; list.push(t); } });
+    } else {
+      list = all;
+      if (r.keep) list.forEach(t => { if (!t.own) t.on = r.keep.includes(lc(t.name)); });
+    }
+    testList.splice(0, testList.length, ...list);
+    // the rest
+    $('#edit').checked = !off('edit');
+    $('#themetoggle').checked = !off('themetoggle');
+    $('#fontname').checked = !off('fontname');
+    $('#info').checked = !off('info');
+    // OpenType features: the listed ones checked, in their start state; the fonts' others come from the preview, unchecked
+    featList.splice(0, featList.length);
+    if (typeof o.features === 'string') {
+      $('#featmode').value = 'pick';
+      o.features.split(',').map(x => x.trim().match(/^([A-Za-z0-9]{4})(?::([01]))?$/)).filter(Boolean).forEach(m => {
+        featList.push({ tag: m[1], name: '', show: true, on: m[2] == null ? FEAT_DEFAULT_ON.has(m[1]) : m[2] === '1', own: true, found: false, hidden: false });
+      });
+      featTouched = true;
+    } else { $('#featmode').value = 'auto'; featTouched = false; }
+    $('#featmode').dispatchEvent(new Event('change'));
+    renderFeatRows();
+    // themes: lighttheme / darktheme (or 6 colors each) + theme = which mode starts; older codes had one theme
+    const sixColors = v => { const c = String(v || '').split(',').map(x => '#' + x.trim().replace(/^#/, '').toLowerCase()); return c.length === FIELDS.length && c.every(x => /^#[0-9a-f]{6}$/.test(x)) ? c : null; };
+    const preset = (m, v) => MODE_THEMES[m].find(n => n.toLowerCase() === String(v || '').trim().toLowerCase());
+    const setMode = (m, name, cols) => {
+      if (cols) { $('#t' + m).value = 'custom'; FIELDS.forEach(([k], i) => { $(`#c-${m}-${k}`).value = cols[i]; }); }
+      else $('#t' + m).value = name || MODE_THEMES[m][0];
+    };
+    const darkBg = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) < 128; };
+    const start = String(o.theme || 'light').trim().toLowerCase();
+    setMode('light', preset('light', o.lighttheme), sixColors(o.lightcolors));
+    setMode('dark', preset('dark', o.darktheme), sixColors(o.darkcolors));
+    if (/^(light|dark|auto)$/.test(start)) $('#tstart').value = start;
+    else {   // older codes: theme=Ocean (a preset) starts in that preset's mode
+      const m = preset('dark', start) ? 'dark' : 'light';
+      setMode(m, preset(m, start), null);
+      $('#tstart').value = m;
+    }
+    const old = sixColors(o.colors);   // older codes: colors=… for the mode of its background
+    if (old) { const m = darkBg(old[1]) ? 'dark' : 'light'; setMode(m, null, old); $('#tstart').value = m; }
+    $('#size').value = isFinite(+o.size) && o.size !== undefined ? o.size : 26;
+    $('#lh').value = isFinite(+o.lh) && o.lh !== undefined ? o.lh : 1.5;
+    $('#align').value = ['left', 'right', 'center', 'justify'].includes(String(o.align || '').toLowerCase()) ? o.align.toLowerCase() : '';
+    const w = parseFloat(o.width);
+    $('#wmode').value = w > 0 ? 'fixed' : 'parent';
+    if (w > 0) $('#width').value = Math.round(w);
+    $('#walign').value = { center: 'center', end: 'end' }[r.position] || '';
+    if (parseFloat(o.height) > 0) $('#height').value = Math.round(parseFloat(o.height));
+    if (r.base) $('#base').value = new URL(r.base, location.href).href;
+    lastHash = null; openChanged = true;
+    renderFonts(); renderTestRows();
+    const nOwn = own.length, nF = fonts.length;
+    if (!quiet) msg.textContent = 'Loaded: ' + nF + ' font' + (nF === 1 ? '' : 's') + ', ' + nOwn + ' test' + (nOwn === 1 ? '' : 's') + ' of your own.' + (bad ? ' ' + bad + ' font could not be read.' : '');
+    return true;
+  }
+  $('#importbtn').addEventListener('click', () => loadCode($('#importcode').value));
+
+  /* --- autosave: the builder keeps its last state in this browser (as a Script code, read back like an import) --- */
+  const SAVE_KEY = 'fft-builder-v1';
+  let saveTimer = 0, canSave = false;
+  function saveState() {
+    if (!canSave) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const kind = document.querySelector('[name=kind]:checked').value;
+      const full = codeScript(options(), true, true);
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify({ code: full, kind, files: true })); }
+      catch (e) {
+        // too big for the browser's storage (font files): keep everything but the font files
+        try {
+          const light = full.replace(/\n  <template data-fft-font data-name="[^"]*"[^>]*>[^<]*<\/template>/g, '');
+          localStorage.setItem(SAVE_KEY, JSON.stringify({ code: light, kind, files: false }));
+        } catch (e2) {}
+      }
+    }, 400);
+  }
+  function restoreState() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) {}
+    if (!saved || !saved.code || !loadCode(saved.code, true)) return false;
+    if (saved.kind === 'iframe') $('#k-iframe').checked = true;
+    $('#sessionmsg').textContent = 'Your last settings are back.' + (saved.files ? '' : ' The font files were too big to keep: choose them again.');
+    $('#session').hidden = false;
+    return true;
+  }
+  $('#startover').addEventListener('click', () => {
+    canSave = false;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    location.reload();
+  });
+  $('#talloff').addEventListener('click', () => setAllTests(false));
+  function startEdit(t) {
+    editing = t;
+    $('#tname').value = t.name; $('#ttext').value = t.text;
+    $('#tadd').textContent = 'Save'; $('#treshape').textContent = 'Reshape & save'; $('#tcancel').hidden = false;
+    renderTestRows();
+    $('.newtest').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('#ttext').focus();
+  }
+  function stopEdit() {
+    editing = null;
+    $('#tname').value = ''; $('#ttext').value = '';
+    $('#tadd').textContent = 'Add'; $('#treshape').textContent = 'Reshape & add'; $('#tcancel').hidden = true;
+  }
+  $('#tcancel').addEventListener('click', () => { stopEdit(); renderTestRows(); });
+  // names are the keys of the order list: unique, and without "|" (the separator in data-tests)
+  function uniqueName(v, self) {
+    let base = (v || '').replace(/\|/g, '/').trim() || 'My test';
+    if (base.toLowerCase() === 'none') base += ' 1';   // "none" means an empty Test tab
+    let name = base, n = 2;
+    while (testList.some(t => t !== self && sameName(t.name, name))) name = base + ' ' + n++;
+    return name;
+  }
+  function addTest(reshape) {
+    let text = $('#ttext').value.replace(/\u00a0/g, ' ').replace(/\s+$/, '');
+    if (!text.trim()) { $('#ttext').focus(); return; }
+    if (reshape) text = reshapeArabic(text);
+    if (editing) { editing.name = uniqueName($('#tname').value, editing); editing.text = text; }
+    else testList.unshift({ name: uniqueName($('#tname').value, null), text, own: true, on: true });   // new tests open first
+    stopEdit();
+    renderTestRows();
+  }
+  $('#tadd').addEventListener('click', () => addTest(false));
+  $('#treshape').addEventListener('click', () => addTest(true));
+
+  /* --- Arabic reshaper: letters -> presentation forms (Arabic Presentation Forms-A / -B) ---
+     forms: [isolated, final, initial, medial]; a letter with only 2 forms joins only to the letter before it (right-joining). */
+  const AR_FORMS = {
+    0x0621: [0xFE80], 0x0622: [0xFE81, 0xFE82], 0x0623: [0xFE83, 0xFE84], 0x0624: [0xFE85, 0xFE86], 0x0625: [0xFE87, 0xFE88],
+    0x0626: [0xFE89, 0xFE8A, 0xFE8B, 0xFE8C], 0x0627: [0xFE8D, 0xFE8E], 0x0628: [0xFE8F, 0xFE90, 0xFE91, 0xFE92], 0x0629: [0xFE93, 0xFE94],
+    0x062A: [0xFE95, 0xFE96, 0xFE97, 0xFE98], 0x062B: [0xFE99, 0xFE9A, 0xFE9B, 0xFE9C], 0x062C: [0xFE9D, 0xFE9E, 0xFE9F, 0xFEA0],
+    0x062D: [0xFEA1, 0xFEA2, 0xFEA3, 0xFEA4], 0x062E: [0xFEA5, 0xFEA6, 0xFEA7, 0xFEA8], 0x062F: [0xFEA9, 0xFEAA], 0x0630: [0xFEAB, 0xFEAC],
+    0x0631: [0xFEAD, 0xFEAE], 0x0632: [0xFEAF, 0xFEB0], 0x0633: [0xFEB1, 0xFEB2, 0xFEB3, 0xFEB4], 0x0634: [0xFEB5, 0xFEB6, 0xFEB7, 0xFEB8],
+    0x0635: [0xFEB9, 0xFEBA, 0xFEBB, 0xFEBC], 0x0636: [0xFEBD, 0xFEBE, 0xFEBF, 0xFEC0], 0x0637: [0xFEC1, 0xFEC2, 0xFEC3, 0xFEC4],
+    0x0638: [0xFEC5, 0xFEC6, 0xFEC7, 0xFEC8], 0x0639: [0xFEC9, 0xFECA, 0xFECB, 0xFECC], 0x063A: [0xFECD, 0xFECE, 0xFECF, 0xFED0],
+    0x0641: [0xFED1, 0xFED2, 0xFED3, 0xFED4], 0x0642: [0xFED5, 0xFED6, 0xFED7, 0xFED8], 0x0643: [0xFED9, 0xFEDA, 0xFEDB, 0xFEDC],
+    0x0644: [0xFEDD, 0xFEDE, 0xFEDF, 0xFEE0], 0x0645: [0xFEE1, 0xFEE2, 0xFEE3, 0xFEE4], 0x0646: [0xFEE5, 0xFEE6, 0xFEE7, 0xFEE8],
+    0x0647: [0xFEE9, 0xFEEA, 0xFEEB, 0xFEEC], 0x0648: [0xFEED, 0xFEEE], 0x0649: [0xFEEF, 0xFEF0], 0x064A: [0xFEF1, 0xFEF2, 0xFEF3, 0xFEF4],
+    0x067E: [0xFB56, 0xFB57, 0xFB58, 0xFB59], 0x0686: [0xFB7A, 0xFB7B, 0xFB7C, 0xFB7D], 0x0698: [0xFB8A, 0xFB8B],
+    0x06A9: [0xFB8E, 0xFB8F, 0xFB90, 0xFB91], 0x06AF: [0xFB92, 0xFB93, 0xFB94, 0xFB95], 0x06CC: [0xFBFC, 0xFBFD, 0xFBFE, 0xFBFF],
+    0x06C0: [0xFBA4, 0xFBA5]
+  };
+  const LAM_ALEF = { 0x0622: [0xFEF5, 0xFEF6], 0x0623: [0xFEF7, 0xFEF8], 0x0625: [0xFEF9, 0xFEFA], 0x0627: [0xFEFB, 0xFEFC] };   // [isolated, final]
+  const isMark = c => (c >= 0x064B && c <= 0x065F) || c === 0x0670 || (c >= 0x06D6 && c <= 0x06ED);
+  const joinsBefore = c => c === 0x0640 || c === 0x200D || (AR_FORMS[c] && AR_FORMS[c].length > 1);   // can connect to the letter before
+  const joinsAfter = c => c === 0x0640 || c === 0x200D || (AR_FORMS[c] && AR_FORMS[c].length === 4);  // can connect to the letter after
+  function reshapeArabic(text) {
+    const cps = [...text].map(ch => ch.codePointAt(0));
+    const out = [];
+    // index of the next / previous character that is not a mark (marks are transparent for joining)
+    const next = i => { for (let j = i + 1; j < cps.length; j++) if (!isMark(cps[j])) return j; return -1; };
+    let prevJoins = false;   // the letter before can connect to this one
+    for (let i = 0; i < cps.length; i++) {
+      const c = cps[i];
+      if (isMark(c)) { out.push(c); continue; }
+      const f = AR_FORMS[c];
+      if (!f) { out.push(c); prevJoins = joinsAfter(c); continue; }
+      const before = prevJoins && joinsBefore(c);
+      const j = next(i), n = j < 0 ? 0 : cps[j];
+      if (c === 0x0644 && LAM_ALEF[n]) {   // lam + alef -> one ligature; marks between them follow it
+        out.push(LAM_ALEF[n][before ? 1 : 0]);
+        for (let k = i + 1; k < j; k++) out.push(cps[k]);
+        i = j; prevJoins = false;
+        continue;
+      }
+      const after = joinsAfter(c) && j >= 0 && joinsBefore(n);
+      out.push(f.length === 1 ? f[0] : before && after ? f[3] : before ? f[1] : after ? f[2] : f[0]);
+      prevJoins = joinsAfter(c);
+    }
+    return String.fromCodePoint(...out);
+  }
+  // the presets of each mode, and 6 color pickers per mode for "Custom colors…"
+  const MODE_THEMES = { light: ['Light', 'Material', 'Yellow', 'Mint'], dark: ['Dark', 'Night', 'Ocean', 'Terminal'] };
+  ['light', 'dark'].forEach(m => {
+    const sel = $('#t' + m), box = $('#c' + m);
+    MODE_THEMES[m].forEach(n => sel.add(new Option(n, n)));
+    sel.add(new Option('Custom colors…', 'custom'));
+    box.insertAdjacentHTML('beforeend', `<p class="hint cap">${m === 'light' ? 'Light' : 'Dark'} mode colors</p>`);
+    FIELDS.forEach(([k, t], i) => {
+      box.insertAdjacentHTML('beforeend', `<label>${t}<input type="color" id="c-${m}-${k}" value="#${THEMES[MODE_THEMES[m][0]][i]}"></label>`);
+    });
+  });
+  $('#base').value = location.href.replace(/[^\/]*([?#].*)?$/, '');
+
+  /* --- sortable lists: rows have class "drow", data-i (index in arr) and a ".handle" button --- */
+  const ICON = {
+    grip: '<svg viewBox="0 0 16 24" aria-hidden="true"><circle cx="5" cy="5" r="2"/><circle cx="11" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="11" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="11" cy="19" r="2"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>',
+    del: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  };
+  const handleHtml = '<button type="button" class="handle" title="Drag to reorder" aria-label="Reorder: drag, or use the arrow keys">' + ICON.grip + '</button>';
+  function sortable(box, arr, rerender) {
+    box.addEventListener('pointerdown', e => {
+      const h = e.target.closest('.handle');
+      if (!h || e.button > 0) return;
+      e.preventDefault();
+      const row = h.closest('.drow'), item = arr[+row.dataset.i];
+      const r = row.getBoundingClientRect(), b0 = box.getBoundingClientRect();
+      const grab = e.clientY - r.top;
+      const ph = document.createElement('div');
+      ph.className = 'dph'; ph.style.height = r.height + 'px';
+      box.insertBefore(ph, row);
+      row.classList.add('dragging');
+      row.style.width = r.width + 'px';
+      row.style.top = (r.top - b0.top) + 'px';
+      document.body.classList.add('sorting');
+      h.setPointerCapture(e.pointerId);
+      const scroller = box.closest('.opts');
+      let lastY = e.clientY, raf = 0;
+      const place = () => {
+        const b = box.getBoundingClientRect();
+        row.style.top = Math.max(-r.height / 2, Math.min(b.height - r.height / 2, lastY - b.top - grab)) + 'px';
+        const before = [...box.querySelectorAll('.drow:not(.dragging)')].find(o => {
+          const q = o.getBoundingClientRect(); return lastY < q.top + q.height / 2;
+        });
+        if (before) { if (ph.nextElementSibling !== before) box.insertBefore(ph, before); }
+        else if (box.lastElementChild !== ph) box.appendChild(ph);
+      };
+      // near the top / bottom edge of the scrolling options panel, keep scrolling while dragging
+      const tick = () => {
+        raf = 0;
+        if (!scroller || scroller.scrollHeight <= scroller.clientHeight) return;
+        const sr = scroller.getBoundingClientRect(), edge = 40;
+        const v = lastY < sr.top + edge ? -8 : lastY > sr.bottom - edge ? 8 : 0;
+        if (v) { scroller.scrollTop += v; place(); raf = requestAnimationFrame(tick); }
+      };
+      const move = ev => { lastY = ev.clientY; place(); if (!raf) raf = requestAnimationFrame(tick); };
+      const end = () => {
+        h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', end); h.removeEventListener('pointercancel', end);
+        cancelAnimationFrame(raf);
+        document.body.classList.remove('sorting');
+        box.insertBefore(row, ph); ph.remove();
+        row.classList.remove('dragging'); row.style.width = row.style.top = '';
+        const order = [...box.querySelectorAll('.drow')].map(x => arr[+x.dataset.i]);
+        if (order.some((x, i) => x !== arr[i])) {
+          arr.splice(0, arr.length, ...order);
+          rerender();
+          const hs = box.querySelectorAll('.handle');
+          if (hs[arr.indexOf(item)]) hs[arr.indexOf(item)].focus({ preventScroll: true });
+        }
+      };
+      h.addEventListener('pointermove', move); h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+    });
+    box.addEventListener('keydown', e => {
+      const h = e.target.closest('.handle');
+      if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+      e.preventDefault();
+      const i = +h.closest('.drow').dataset.i, j = i + (e.key === 'ArrowUp' ? -1 : 1);
+      if (j < 0 || j >= arr.length) return;
+      arr.splice(j, 0, arr.splice(i, 1)[0]);
+      rerender();
+      box.querySelectorAll('.handle')[j].focus();
+    });
+  }
+
+  /* --- the owner's fonts: files (put into the code as base64) or URLs --- */
+  const fonts = [];   // { kind: 'file', name, buf, b64 } | { kind: 'url', url }, + label
+  const kb = n => n < 1024 * 1024 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+  const toB64 = buf => {
+    const a = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000));
+    return btoa(s);
+  };
+  function renderFonts() {
+    const box = $('#fontrows');
+    box.textContent = '';
+    fonts.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'drow'; row.dataset.i = i;
+      row.innerHTML = handleHtml + '<div class="main"><input type="text" dir="auto" placeholder="The font’s own name" aria-label="Name in the Font tab">'
+        + '<span class="sub src"></span></div>'
+        + (f.kind === 'file' ? '<button type="button" class="state b64" title="Put this font file in the code, as Base64"></button>' : '')
+        + '<button type="button" class="del" title="Remove" aria-label="Remove">' + ICON.del + '</button>';
+      if (f.kind === 'file') {
+        // a chosen file is only used in the preview, unless it is put in the code (Base64)
+        const b = row.querySelector('.b64');
+        const paint = () => { b.textContent = f.inCode ? 'In code (Base64)' : 'Add as Base64'; b.setAttribute('aria-pressed', String(!!f.inCode)); b.setAttribute('aria-label', f.name + ': ' + (f.inCode ? 'in the code as Base64' : 'only in the preview')); };
+        paint();
+        b.addEventListener('click', () => { f.inCode = !f.inCode; paint(); update(); });
+      }
+      const inp = row.querySelector('input');
+      inp.value = f.label || '';
+      inp.addEventListener('input', () => { f.label = inp.value.trim(); update(); });
+      row.querySelector('.del').addEventListener('click', () => { fonts.splice(i, 1); renderFonts(); });
+      row.querySelector('.src').textContent = f.kind === 'file' ? f.name + ' · ' + kb(f.buf.byteLength) : f.url;
+      box.appendChild(row);
+    });
+    lastHash = null;   // the preview gets the new list
+    update();
+  }
+  sortable($('#fontrows'), fonts, renderFonts);
+  $('#pick').addEventListener('click', () => $('#files').click());
+  $('#files').addEventListener('change', async e => {
+    for (const file of e.target.files) {
+      if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) continue;
+      const buf = await file.arrayBuffer();
+      fonts.push({ kind: 'file', name: file.name, buf, b64: toB64(buf), label: '', inCode: false });   // preview only until put in the code
+    }
+    e.target.value = '';
+    renderFonts();
+  });
+  const addUrl = () => {
+    const u = $('#url').value.trim();
+    if (!u) return;
+    fonts.push({ kind: 'url', url: u, label: '' });
+    $('#url').value = '';
+    renderFonts();
+  };
+  $('#addurl').addEventListener('click', addUrl);
+  $('#url').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } });
+  // the preview asks for the fonts (as the real embed.js would answer)
+  window.addEventListener('message', e => {
+    const f = $('#preview iframe');
+    if (!f || e.source !== f.contentWindow || !e.data || e.data.fft !== 'hello' || !fonts.length) return;
+    const list = fonts.map(x => x.kind === 'file'
+      ? { buf: x.buf.slice(0), name: x.name, label: x.label }
+      : { url: new URL(x.url, location.href).href, label: x.label });
+    f.contentWindow.postMessage({ fft: 'fonts', fonts: list }, '*', list.filter(x => x.buf).map(x => x.buf));
+  });
+
+  // the options that differ from the tester's defaults (the code stays short)
+  function options() {
+    const o = {};
+    const tabs = [...document.querySelectorAll('[name=tabs]:checked')].map(x => x.value);
+    if (tabs.length && tabs.length < TABS.length) o.tabs = tabs.join(',');
+    const first = $('#tab').value;
+    if (first !== (tabs[0] || 'font')) o.tab = first;
+    const own = testList.filter(t => t.own && t.on);
+    if (own.length) { o.text = own.map(t => t.text); o.textname = own.map(t => t.name); }
+    if (!isDefaultTests()) {
+      const on = testList.filter(t => t.on).map(t => t.name);
+      o.test = on.length ? on : ['none'];   // "none" = an empty Test tab (no test param at all would mean the defaults)
+    }
+    if (!$('#edit').checked) o.edit = '0';
+    if ($('#tstart').value !== 'light') o.theme = $('#tstart').value;
+    ['light', 'dark'].forEach(m => {
+      const v = $('#t' + m).value;
+      if (v === 'custom') o[m + 'colors'] = FIELDS.map(([k]) => $(`#c-${m}-${k}`).value.slice(1)).join(',');
+      else if (v !== MODE_THEMES[m][0]) o[m + 'theme'] = v;
+    });
+    if (!$('#themetoggle').checked) o.themetoggle = '0';
+    if (!$('#fontname').checked) o.fontname = '0';
+    if (!$('#info').checked) o.info = '0';
+    if ($('#featmode').value === 'pick') o.features = featList.filter(f => f.show).map(featCode).join(',') || 'none';
+    if ($('#size').value !== '26') o.size = $('#size').value;
+    if ($('#lh').value !== '1.5') o.lh = $('#lh').value;
+    if ($('#align').value) o.align = $('#align').value;
+    return o;
+  }
+  function hash(o) {
+    const p = new URLSearchParams();
+    p.append('embed', '1');
+    Object.keys(o).forEach(k => [].concat(o[k]).forEach(v => p.append(k, v)));
+    return p.toString();
+  }
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const height = () => Math.max(240, Math.round(+$('#height').value) || 560);
+  const fixedW = () => $('#wmode').value === 'fixed' ? Math.max(280, Math.round(+$('#width').value) || 720) : 0;
+  const frameCss = () => {
+    const w = fixedW(), a = $('#walign').value;
+    return 'display:block;' + (w ? 'width:' + w + 'px;max-width:100%;' : 'width:100%;') +
+      (w && a === 'center' ? 'margin-inline:auto;' : w && a === 'end' ? 'margin-inline-start:auto;' : '') +
+      'height:' + height() + 'px;border:0;border-radius:12px';
+  };
+  const base = () => { let b = $('#base').value.trim(); if (b && !b.endsWith('/')) b += '/'; return b; };
+
+  // full = the code to copy; the screen shows base64 data shortened
+  // full = the code to copy (the screen shows Base64 data shortened); forSave = also the "preview only" files, marked
+  function codeScript(o, full, forSave) {
+    const attrs = ['data-fft'];
+    const list = forSave ? fonts : fonts.filter(f => f.kind === 'url' || f.inCode);
+    const urls = list.some(f => f.kind === 'file') ? [] : list;   // with files, every font is a <template>, in the chosen order
+    if (urls.length) {
+      attrs.push(`data-font="${esc(urls.map(f => f.url).join(' | '))}"`);
+      if (urls.some(f => f.label)) attrs.push(`data-label="${esc(urls.map(f => f.label || '').join(' | '))}"`);
+    }
+    Object.keys(o).forEach(k => {
+      if (k === 'text' || k === 'textname') return;
+      attrs.push(`data-${k === 'test' ? 'tests' : k}="${esc([].concat(o[k]).join(' | '))}"`);
+    });
+    if (fixedW()) { attrs.push(`data-width="${fixedW()}"`); if ($('#walign').value) attrs.push(`data-position="${$('#walign').value}"`); }
+    attrs.push(`data-height="${height()}"`);
+    let html = '<div ' + attrs.join('\n     ') + '>';
+    if (!urls.length) list.forEach(f => {
+      if (f.kind === 'url') { html += `\n  <template data-fft-font data-url="${esc(f.url)}"${f.label ? ` data-label="${esc(f.label)}"` : ''}></template>`; return; }
+      const data = full ? f.b64 : f.b64.slice(0, 40) + '… (' + kb(f.b64.length) + ' of font data, copied in full)';
+      html += `\n  <template data-fft-font data-name="${esc(f.name)}"${f.label ? ` data-label="${esc(f.label)}"` : ''}${f.inCode ? '' : ' data-preview-only'}>${data}</template>`;
+    });
+    (o.text || []).forEach((t, i) => { html += `\n  <template data-fft-text data-name="${esc(o.textname[i])}">${esc(t)}</template>`; });
+    if (html.includes('<template')) html += '\n';
+    html += '</div>\n<script src="' + esc(base() + 'embed.js') + '" async><\/script>';
+    return html;
+  }
+  function codeIframe(o) {
+    const p = {};
+    const urls = fonts.filter(f => f.kind === 'url');
+    if (urls.length) { p.font = urls.map(f => new URL(f.url, location.href).href); if (urls.some(f => f.label)) p.label = urls.map(f => f.label || ''); }
+    Object.assign(p, o);
+    return `<iframe src="${esc(base() + 'embed-frame.html#' + hash(p))}"\n        title="Font tester" loading="lazy" allow="clipboard-write"\n        style="${frameCss()}"></iframe>`;
+  }
+
+  // the number inside the thumb, as in FFT (the thumb is 30px wide)
+  function placeValues() {
+    document.querySelectorAll('.slider').forEach(sl => {
+      const v = sl.parentElement.querySelector('.slider-value'), w = sl.offsetWidth;
+      const min = +sl.min, max = +sl.max, val = +sl.value;
+      v.textContent = String(+val.toFixed(2));
+      if (w) v.style.left = (((val - min) / ((max - min) || 1)) * (w - 30) + 15) + 'px';
+    });
+  }
+  window.addEventListener('resize', placeValues);
+  const FRAME = 'embed-frame.html?v=1.0-ed7179a4';   // the version is written by build-embed.mjs (a new one = not taken from the cache)
+  let timer = 0, lastHash = '', lastOpen = '', openChanged = false;
+  let previewTab = '';   // the tab open in the preview, as it reports it
+  window.addEventListener('message', e => {
+    const f = $('#preview iframe');
+    if (f && e.source === f.contentWindow && e.data && e.data.fft === 'tab' && typeof e.data.tab === 'string') previewTab = e.data.tab;
+  });
+  function update() {
+    $('#clight').hidden = $('#tlight').value !== 'custom';
+    $('#cdark').hidden = $('#tdark').value !== 'custom';
+    $('#wfixed').hidden = $('#wmode').value !== 'fixed';
+    $('#urlhint').hidden = !fonts.some(f => f.kind === 'url');
+    $('#b64note').hidden = !fonts.some(f => f.kind === 'file' && f.inCode);
+    $('#filehint').hidden = !fonts.some(f => f.kind === 'file' && !f.inCode);
+    $('#onefont').hidden = !(fonts.length === 1 && $('#tabs-font').checked);
+    $('#whint').textContent = $('#wmode').value === 'fixed'
+      ? 'Never wider than its container: on a narrow screen it shrinks to fit.'
+      : 'The tester fills its container and follows it when the page is resized.';
+    placeValues();
+    // the first tab must be one of the visible ones
+    const tabs = [...document.querySelectorAll('[name=tabs]:checked')].map(x => x.value);
+    [...$('#tab').options].forEach(op => { op.disabled = tabs.length > 0 && !tabs.includes(op.value); });
+    if ($('#tab').selectedOptions[0].disabled) $('#tab').value = tabs[0];
+
+    const o = options();
+    saveState();
+    const script = document.querySelector('[name=kind]:checked').value === 'script';
+    $('#code').textContent = script ? codeScript(o, false) : codeIframe(o);
+    $('#kindhint').textContent = script
+      ? 'Paste where the tester should appear. Your page downloads the font URLs itself, so fonts on your own site need no extra server setup and relative addresses work. Font files you put in the code (Base64) are inside it; for big files, upload them to your site and add their URLs instead.'
+      : 'For site builders that block scripts. Here the tester downloads the fonts, so their server must allow CORS, and chosen files can’t be used.';
+    const warn = [];
+    if (!fonts.length) warn.push('Add at least one font.');
+    else if (!fonts.some(f => f.kind === 'url' || f.inCode)) warn.push('No font is in the code yet: your fonts are only in the preview.');
+    if (!testList.some(t => t.on)) warn.push('No test is checked: the Test tab will be empty.');
+    if (!script && fonts.some(f => f.kind === 'file' && f.inCode)) warn.push('Font files work only with the Script code: switch to it, or use URLs.');
+    if (!script && fonts.some(f => f.kind === 'url' && !/^https?:\/\//i.test(f.url))) warn.push('In an iframe, font addresses must be full https:// URLs.');
+    const bytes = fonts.reduce((n, f) => n + (f.b64 && f.inCode ? f.b64.length : 0), 0);
+    if (script && bytes > 600 * 1024) warn.push('The font files add ' + kb(bytes) + ' to your page. Using woff2 files or URLs keeps it light.');
+    $('#warn').hidden = !warn.length; $('#warn').textContent = warn.join(' ');
+
+    const h = hash(Object.assign(fonts.length ? { pf: '1' } : {}, o));
+    $('#preview').style.height = height() + 'px';
+    const cur = $('#preview iframe'); if (cur) cur.style.cssText = frameCss();
+    if (h === lastHash) return;
+    clearTimeout(timer);
+    if ($('#tab').value !== lastOpen) { lastOpen = $('#tab').value; openChanged = true; }   // kept until the preview reloads
+    timer = setTimeout(() => {   // a new iframe each time: changing only the hash of an iframe would not reload it
+      lastHash = h;
+      // the preview stays on the tab that was open (unless "Opens on" itself was changed)
+      let ph = h;
+      // (the preview reports its tab with postMessage, which also works when this page is opened from the disk)
+      const useOpen = openChanged; openChanged = false;
+      if (useOpen) previewTab = '';
+      if (previewTab && (!o.tabs || o.tabs.split(',').includes(previewTab))) ph = hash(Object.assign(fonts.length ? { pf: '1' } : {}, o, { tab: previewTab }));
+      const f = document.createElement('iframe');
+      f.title = 'Preview of the embedded font tester';
+      f.allow = 'clipboard-write';
+      f.style.cssText = frameCss();
+      f.src = FRAME + '#' + ph + '&debug=1';   // debug: the preview shows the technical font errors
+      $('#preview').replaceChildren(f);
+    }, 350);
+  }
+  $('#f').addEventListener('input', update);
+  $('#f').addEventListener('change', update);
+  document.querySelectorAll('[name=kind]').forEach(r => r.addEventListener('change', update));
+  $('#copy').addEventListener('click', async () => {
+    const script = document.querySelector('[name=kind]:checked').value === 'script';
+    const text = script ? codeScript(options(), true) : $('#code').textContent;
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+      document.execCommand('copy'); t.remove();
+    }
+    $('#copy').textContent = 'Copied';
+    setTimeout(() => { $('#copy').textContent = 'Copy code'; }, 1400);
+  });
+  renderFeatRows();
+  if (!restoreState()) renderTestRows();
+  canSave = true;
+  saveState();
+})();
+</script>
+</body>
+</html>
