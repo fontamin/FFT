@@ -4,6 +4,73 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
+  /* =================== Embed mode ===================
+     index.html#embed&tabs=font,layout,test&font=https://…/a.woff2&theme=Dark&text=…
+     (the hash or the query string; the hash is preferred because it never reaches the server and has no length limit).
+     All options are listed in EMBED.md. In embed mode nothing is read from / written to the real localStorage, so an
+     embedded tester never mixes with the settings of the full app (same origin) or of another embed. */
+  const EMBED = (() => {
+    const p = new URLSearchParams(location.search);
+    new URLSearchParams(location.hash.slice(1)).forEach((v, k) => p.append(k, v));
+    if (!p.has('embed')) return null;   //#full
+    const list = k => (p.get(k) || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const off = k => /^(0|false|no|off)$/i.test(p.get(k) || '');
+    const num = k => { const v = parseFloat(p.get(k)); return isFinite(v) ? v : null; };
+    return {
+      tabs: list('tabs'), tab: (p.get('tab') || '').toLowerCase(),
+      fonts: p.getAll('font').map(s => s.trim()).filter(Boolean),
+      labels: p.getAll('label').map(s => s.trim()),
+      parent: p.has('pf'),   // embed.js / the builder sends the font files with postMessage
+      edit: !off('edit'), toggle: !off('themetoggle'), fontName: !off('fontname'), info: !off('info'),
+      debug: p.has('debug'),   // the builder's preview: full error messages
+      // OpenType tab: only these features, in this order; tag:1 / tag:0 = on / off at start (plain tag = the usual default)
+      features: !p.has('features') ? null : (p.get('features') || '').split(',').map(s => s.trim())
+        .map(s => s.match(/^([A-Za-z0-9]{4})(?::([01]))?$/)).filter(Boolean)
+        .map(m => ({ tag: m[1], on: m[2] == null ? null : m[2] === '1' })),
+      theme: p.get('theme') || '', colors: p.get('colors') || '',
+      // the light and the dark theme (a preset name or 6 colors); theme = light / dark / auto then says which one starts
+      lightTheme: p.get('lighttheme') || '', lightColors: p.get('lightcolors') || '',
+      darkTheme: p.get('darktheme') || '', darkColors: p.get('darkcolors') || '',
+      // the site owner's tests: text + textname pairs (repeatable); test = the order of the Test tab (names, repeatable)
+      texts: p.getAll('text'), textNames: p.getAll('textname'),
+      order: p.getAll('test').map(s => s.trim().toLowerCase()).filter(Boolean),
+      tests: p.has('tests') ? list('tests') : null,   // older codes: which built-in tests to keep
+      size: num('size'), lh: num('lh'), align: (p.get('align') || '').toLowerCase(),
+      scale: num('scale'), rows: num('rows')
+    };
+  })();
+  let embedFontFailed = false;   // the embed: none of the site owner's fonts could be loaded (used by the tabs)
+  // in-memory stand-in for localStorage (keys are own enumerable properties, so Object.keys() works as before)
+  const localStorage = EMBED ? (() => {
+    const m = {};
+    Object.defineProperties(m, {
+      getItem: { value: k => Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null },
+      setItem: { value: (k, v) => { m[k] = String(v); } },
+      removeItem: { value: k => { delete m[k]; } }
+    });
+    return m;
+  })() : window.localStorage;
+  if (EMBED) {
+    document.documentElement.classList.add('fft-embed');
+    // the parent page is sending the font files: the text waits for them instead of flashing the fallback font
+    if (EMBED.parent) {
+      document.documentElement.classList.add('fft-wait');
+      setTimeout(() => document.documentElement.classList.remove('fft-wait'), 5000);
+    }
+    document.body.classList.remove('darkmode');   // index.html may have set it from the full app's setting
+    if (!EMBED.toggle) document.documentElement.classList.add('fft-notoggle');
+    if (!EMBED.fontName) document.documentElement.classList.add('fft-nofontname');
+    if (!EMBED.info) document.documentElement.classList.add('fft-noinfo');
+    if (EMBED.features) document.documentElement.classList.add('fft-ownfeat');   // the site owner's list: no "All" button
+    {
+      // the fonts are fixed by the site owner: no drag & drop (window capture runs before the document listeners below)
+      const fileDrag = e => { const t = e.dataTransfer && e.dataTransfer.types; return !!t && Array.prototype.some.call(t, x => x === 'Files' || x === 'application/x-moz-file' || x === 'text/uri-list'); };
+      ['dragenter', 'dragover', 'drop'].forEach(t => window.addEventListener(t, e => { if (fileDrag(e)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true));
+    }
+    // a new configuration (the parent page changed the hash) = a fresh start
+    window.addEventListener('hashchange', () => location.reload());
+  }
+
   /* =================== Material icons (inline SVG paths, 24px) =================== */
   const MI = {
   "close": "M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
@@ -86,6 +153,18 @@
 
   // Brotli is needed to read woff2 tables; not every browser supports it in DecompressionStream
   const BROTLI = (() => { try { new DecompressionStream('brotli'); return true; } catch (e) { return false; } })();
+  // without it, brotli.js (Google's decoder, ~200 KB) is loaded the first time a woff2 font is read
+  const BROTLI_SRC = 'brotli.js';   //#full
+  //#embed const BROTLI_SRC = 'brotli.js?v={{BROTLI_VERSION}}';
+  let brotliLoad = null;
+  const loadBrotli = () => brotliLoad || (brotliLoad = new Promise((ok, fail) => {
+    if (window.BrotliDecode) { ok(window.BrotliDecode); return; }
+    const sc = document.createElement('script');
+    sc.src = BROTLI_SRC;
+    sc.onload = () => window.BrotliDecode ? ok(window.BrotliDecode) : fail(new Error('no BrotliDecode'));
+    sc.onerror = () => { brotliLoad = null; fail(new Error('brotli.js not loaded')); };
+    document.head.appendChild(sc);
+  }));
   const COMMON = ['kern','liga','calt','clig','dlig','smcp','c2sc','onum','lnum','pnum','tnum',
     'frac','zero','sups','subs','ss01','ss02','ss03'];
 
@@ -101,10 +180,12 @@
   let active = null;
   let guidesOn = false;   // ascender / descender / x-height / cap-height lines
   let gRaf = 0;
-  let justOn = false, jTimer = 0;   // kashida justification (see "Justify" section)
+  let justOn = false, jTimer = 0;   // kashida justification (see "Justify" section)   //#full
   let counter = 0;
+  //#if full
   let colorLine = '';     // 'color: …; background-color: …;' (shown instead of font-size / line-height while Layout Colors is open)
   let colorCss = '';      // text/background colors chosen in the Layout tab (shown in the CSS preview)
+  //#endif
 
   const cleanId = s => s.replace(/\W/g, '_');
   const featName = tag => {
@@ -116,7 +197,7 @@
   const axisLabel = a => AXIS_NAMES[a.tag] || a.name || a.tag;
   const setStatus = s => { statusEl.textContent = s || ''; };
   const titleOf = r => r.name + (r.version ? ' v' + r.version : '');
-  const chipLabel = r => r.system ? 'Fallback font' : shorten(r.file, CHIP_MAX);
+  const chipLabel = r => r.system ? 'Fallback font' : shorten(r.label || (EMBED ? r.name : r.file), CHIP_MAX);
   const shorten = (s, n) => {
     const a = [...s];
     return a.length > n ? a.slice(0, n - 1).join('') + '…' : s;
@@ -129,8 +210,9 @@
   let lastLay = '', lastVar = null, lastFeat = null, applyRaf = 0;
 
   function updateT3() {
-    const colorMode = tab1Row.classList.contains('colormode'), justMode = tab1Row.classList.contains('justmode');
-    setText(t3, colorMode ? colorLine : justMode ? justLine() : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);
+    const colorMode = tab1Row.classList.contains('colormode'), justMode = tab1Row.classList.contains('justmode');   //#full
+    setText(t3, colorMode ? colorLine : justMode ? justLine() : `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);   //#full
+    //#embed setText(t3, `font-size: ${+sizeIn.value}px; line-height: ${+heightIn.value}em;`);
   }
 
   // slider events: at most one update per frame
@@ -170,8 +252,8 @@
     }
 
     updateT3();
-    if (justOn && chg) scheduleJust();
-    if (glyphOn && layoutChanged) updateGlyphSize();   // glyph size only depends on Size / Height
+    if (justOn && chg) scheduleJust();   //#full
+    if (glyphOn && layoutChanged) updateGlyphSize();   // glyph size only depends on Size / Height   //#full
     scheduleGuides();
   }
 
@@ -227,7 +309,7 @@
     scrollMem[from] = pos;
     secEl().scrollLeft = scrollMem[to] || 0;
     // multi-row: the row is re-packed (and its width changes) right after this, so packRows applies the position again once it is done
-    if (frows > 1) { wantScroll = scrollMem[to] || 0; setTimeout(() => { wantScroll = null; }, 400); }
+    if (frows > 1) { wantScroll = scrollMem[to] || 0; setTimeout(() => { wantScroll = null; }, 400); }   //#full
   }
 
   /* =================== Build UI from font info =================== */
@@ -238,7 +320,13 @@
     axesBox.textContent = '';
     Object.keys(axisVals).forEach(k => delete axisVals[k]);
     diceBtn.style.display = info.axes.length ? '' : 'none';
-    if (!info.axes.length) { hint(axesBox, 'No variable axes in this font'); updateBubbles(); return; }
+    if (!info.axes.length) {
+      // a woff2 this browser can't decode (no Brotli): its axes are unknown, not missing
+      hint(axesBox, embedFontFailed && info.generic ? 'The font couldn’t be loaded.'
+        : info.noBrotli ? 'This browser can’t read the axes of a woff2 font. Use the woff, ttf or otf version of the font.'
+        : info.generic ? 'The axes of this font couldn’t be read' : 'No variable axes in this font');
+      updateBubbles(); return;
+    }
     info.axes.forEach(a => {
       const step = (a.max - a.min) > 10 ? 1 : 0.01;
       const g = axisGlobal[a.tag];
@@ -255,6 +343,7 @@
     requestAnimationFrame(updateBubbles);
   }
 
+  //#if full
   /* --- custom OpenType features (typed in by the user, saved in localStorage and in the backup file) --- */
   const FEAT_KEY = 'fft-features';
   const tagOk = t => typeof t === 'string' && /^[A-Za-z0-9]{4}$/.test(t);
@@ -279,8 +368,12 @@
     saveFeats();
     buildFeatures(); applyStyles();
   }
+  //#else
+  //= const customFeats = [];   // the embed: visitors add no features
+  //#endif
 
   function buildFeatures() {
+    if (EMBED && EMBED.features) { buildOwnerFeatures(); return; }
     featBox.textContent = '';
     // a generic list isn't read from the font: with All on, offer the shaping features too (applying an absent one is harmless)
     const pool = showAll.checked && info.generic ? [...new Set([...info.features, ...HIDDEN])].sort() : info.features;
@@ -313,16 +406,49 @@
       lb.textContent = longNames.checked ? full : tag;
       lb.title = full;   // the full name is always in the tooltip
       p.append(cb, lb);
+      //#if full
       if (cf) {
         const xb = document.createElement('button');
         xb.type = 'button'; xb.className = 'otx'; xb.innerHTML = icn('close'); xb.title = 'Remove this feature';
         xb.addEventListener('click', () => removeCustom(tag));
         p.appendChild(xb);
       }
+      //#endif
       featBox.appendChild(p);
     });
   }
 
+  // embed with a features list: exactly the site owner's features (a feature the shown font lacks is dimmed)
+  function buildOwnerFeatures() {
+    featBox.textContent = '';
+    const have = new Set(info.features);
+    if (!EMBED.features.length) { hint(featBox, 'No OpenType features'); return; }
+    EMBED.features.forEach(({ tag, on }) => {
+      if (!(tag in featOn)) featOn[tag] = on == null ? DEFAULT_ON.has(tag) : on;
+      const absent = !info.generic && !have.has(tag);
+      const p = document.createElement('p'); p.className = 'font-slider' + (absent ? ' carried' : '');
+      if (absent) p.title = 'Not in this font';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'hidden'; cb.id = 'f_' + cleanId(tag);
+      cb.autocomplete = 'off'; cb.checked = featOn[tag];
+      cb.addEventListener('change', () => { featOn[tag] = cb.checked; applyStyles(); });
+      const lb = document.createElement('label');
+      const full = featName(tag) === tag ? tag : `${featName(tag)} · ${tag}`;
+      lb.htmlFor = cb.id; lb.textContent = longNames.checked ? full : tag; lb.title = full;
+      p.append(cb, lb);
+      featBox.appendChild(p);
+    });
+  }
+  // tells the parent page (the builder) the features of the site owner's fonts, with their names
+  function postFeatures() {
+    if (!EMBED) return;
+    const own = fonts.filter(r => !r.system && r.info && !r.info.generic);
+    const inFonts = new Set(own.flatMap(r => r.info.features || []));
+    const tags = [...new Set([...inFonts, ...(EMBED.features || []).map(f => f.tag)])].sort();
+    post({ fft: 'features', list: tags.map(t => ({ tag: t, name: featName(t), hidden: HIDDEN.has(t), on: DEFAULT_ON.has(t), found: inFonts.has(t) })) });
+  }
+
+  //#if full
   // "Add" row: tag + default value (1 / 0 / on / off)
   const otTag = $('#ottag'), otVal = $('#otval');
   const flashErr = el => { el.classList.add('err'); setTimeout(() => el.classList.remove('err'), 1200); el.focus(); };
@@ -339,6 +465,7 @@
   }
   $('#otadd').addEventListener('click', addCustom);
   [otTag, otVal].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); }));
+  //#endif
 
   /* --- Named instances (Variation tab): buttons, like the OpenType features --- */
   const instBox = $('#instances'), instToggle = $('#insttoggle'), tab2Row = $('.pc-tab section .tab2');
@@ -349,10 +476,14 @@
   // The elements that really have a box in the current layout. In multi-row mode the groups (#colorgroup, #instgroup, #wikigroup...)
   // are display: contents, i.e. they have NO box, so an animation on the group itself is never drawn: animate their items instead.
   function animTargets(g) {
+    //#if full
     if (frows < 2) return [g];
     const t = [];
     leafItems(g, t);
     return t.length ? t : [g];
+    //#else
+    //= return [g];
+    //#endif
   }
   function slideIn(el) {
     if (!el) return;
@@ -456,6 +587,11 @@
   const tag4 = (dv, o) => String.fromCharCode(dv.getUint8(o), dv.getUint8(o + 1), dv.getUint8(o + 2), dv.getUint8(o + 3));
 
   async function inflate(u8, fmt) {
+    if (fmt === 'brotli' && !BROTLI) {   // the browser can't: Google's decoder in JavaScript
+      const dec = await loadBrotli();
+      const out = dec(new Int8Array(u8.buffer, u8.byteOffset, u8.byteLength));
+      return new Uint8Array(out.buffer, out.byteOffset, out.byteLength);
+    }
     const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream(fmt));
     return new Uint8Array(await new Response(s).arrayBuffer());
   }
@@ -795,7 +931,9 @@
     $('.tab5').classList.toggle('nofonts', fonts.filter(r => !r.system).length < 2);
     listEl.textContent = '';
     if (!fonts.length) { hint(listEl, 'No fonts — drop files here'); return; }
+    const ownerFonts = EMBED && fonts.some(r => !r.system);
     fonts.forEach(r => {
+      if (ownerFonts && r.system) return;
       const chip = document.createElement('span');
       chip.className = 'chip' + (r === active ? ' active' : '');
       const nb = document.createElement('button');
@@ -804,6 +942,7 @@
       nb.title = r.system ? 'Fallback font: the browser\'s default font' : r.file + ' — ' + titleOf(r);
       nb.addEventListener('click', () => { if (r !== active) activate(r); });
       chip.appendChild(nb);
+      //#if full
       // the fallback font has no file: no reload button and it can't be removed
       if (!r.system) {
         const rb = document.createElement('button');
@@ -817,6 +956,9 @@
         xb.addEventListener('click', () => removeFont(r));
         chip.appendChild(xb);
       } else nb.classList.add('nox');
+      //#else
+      //= nb.classList.add('nox');
+      //#endif
       listEl.appendChild(chip);
     });
     revealAfterPack('#fontlist .chip.active');
@@ -830,10 +972,11 @@
     setInfo(rec.info);
     setStatus(rec.status);
     renderList();
-    if (glyphOn) renderGlyphs();
-    if (justOn) scheduleJust();
+    if (glyphOn) renderGlyphs();   //#full
+    if (justOn) scheduleJust();   //#full
   }
 
+  //#if full
   function removeFont(rec) {
     const i = fonts.indexOf(rec);
     if (i < 0) return;
@@ -851,6 +994,7 @@
     renderList();
     if (glyphOn) renderGlyphs();
   }
+  //#endif
 
   /* =================== Font loading =================== */
   // src: { url } | { file, handle? }
@@ -860,6 +1004,7 @@
       if (!r.ok) throw new Error(r.status);
       return r.arrayBuffer();
     }
+    //#if full
     if (src.handle) {
       if (src.handle.requestPermission) {
         const p = await src.handle.requestPermission({ mode: 'read' });
@@ -867,6 +1012,7 @@
       }
       src.file = await src.handle.getFile();
     }
+    //#endif
     return src.file.arrayBuffer();
   }
 
@@ -905,11 +1051,12 @@
     const face = new FontFace(family, buf.slice(0));
     await face.load(); // throws on invalid font
 
-    let parsed = null, note = '';
+    let parsed = null, note = '', noBrotli = false;
     try { parsed = await parseFont(buf); }
     catch (e) {
       const woff2 = tag4(new DataView(buf), 0) === 'wOF2';
-      note = woff2 && !BROTLI
+      noBrotli = woff2 && !BROTLI && !window.BrotliDecode;   // brotli.js missing or not loaded
+      note = noBrotli
         ? ' — this browser can\'t decode woff2 (no Brotli): generic features shown, use ttf/otf/woff for the real list'
         : ' — could not read font tables, showing generic features';
     }
@@ -922,21 +1069,24 @@
       metrics: measureMetrics(`"${family}"`, parsed && parsed.tab),
       info: parsed
         ? { axes: parsed.axes, instances: parsed.instances, features: parsed.features, chars: parsed.chars, extra: parsed.extra, bases: parsed.bases, gids: parsed.gids, names: parsed.names }
-        : { generic: true, axes: [], features: COMMON },
+        : { generic: true, axes: [], features: COMMON, noBrotli },
       status: parsed
         ? `${name}${version ? ' v' + version : ''}: ${parsed.axes.length} axes, ${parsed.features.length} features`
         : `${name}${note}`
     };
   }
 
-  async function addFont(buf, fileName, src) {
+  async function addFont(buf, fileName, src, label, quiet) {
     const m = await makeFace(buf, fileName);
     const rec = { id: ++counter, src, ...m };
+    if (label) rec.label = label;
     fonts.push(rec);
-    activate(rec);
-    sigOf(rec).then(x => { rec.sig = x; });
+    if (quiet) renderList(); else activate(rec);
+    if (!EMBED) sigOf(rec).then(x => { rec.sig = x; });   //#full
+    return rec;
   }
 
+  //#if full
   async function reloadFont(rec, auto) {
     setStatus((auto ? 'Auto-reloading ' : 'Reloading ') + rec.file + '…');
     rec.reloading = true;
@@ -977,18 +1127,20 @@
   }
   $('#reloadall').addEventListener('click', reloadAll);
   $('#removeall').addEventListener('click', removeAllFonts);
+  //#endif
 
+  //#if full
   /* =================== Auto reload (watches the font files) =================== */
   // Local files (picked / dropped in Chrome or Edge, via file handles) and fonts loaded by URL are checked
   // every second; a font is reloaded once its file stops changing. Plain files from Firefox / Safari can't be watched.
   const AUTO_KEY = 'fft-auto';
-  let autoOn = true;
-  try { autoOn = localStorage.getItem(AUTO_KEY) !== '0'; } catch (e) {}
+  let autoOn = !EMBED;   // an embed shows finished fonts: no auto-reload (no button, no polling)
+  if (!EMBED) { try { autoOn = localStorage.getItem(AUTO_KEY) !== '0'; } catch (e) {} }
   // fixed round button next to the dark-mode button (always visible, whatever the tab or the number of fonts)
   const oldAuto = $('#autobtn'); if (oldAuto) oldAuto.remove();   // leftover from the previous version of index.html
   const autoBtn = document.createElement('button');
   autoBtn.id = 'autobtn'; autoBtn.type = 'button'; autoBtn.innerHTML = icn('autorenew');
-  document.body.appendChild(autoBtn);
+  if (!EMBED) document.body.appendChild(autoBtn);
   const syncAuto = () => {
     autoBtn.classList.toggle('on', autoOn);
     autoBtn.innerHTML = icn(autoOn ? 'autorenew' : 'autorenew_off');
@@ -1037,7 +1189,7 @@
       }
     } finally { watchBusy = false; }
   }
-  setInterval(watchTick, 1000);
+  if (!EMBED) setInterval(watchTick, 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) watchTick(); });
 
   autoBtn.addEventListener('click', () => {
@@ -1056,9 +1208,10 @@
       catch (e) { setStatus('Not a valid font file: ' + it.file.name); }
     }
   }
+  //#endif
 
-  async function loadURL(url) {
-    if (!url) return;
+  async function loadURL(url, label, quiet) {
+    if (!url) return null;
     setStatus('Fetching…');
     const src = { url };
     let buf;
@@ -1068,8 +1221,8 @@
       let nm = 'Font';
       try { nm = decodeURIComponent(url.split('?')[0].split('#')[0].split('/').pop() || 'Font'); }
       catch (e) { nm = url.split('?')[0].split('/').pop() || 'Font'; }
-      await addFont(buf, nm, src);
-    } catch (e) { setStatus('Not a valid font file'); }
+      return await addFont(buf, nm, src, label, quiet);
+    } catch (e) { setStatus('Not a valid font file'); return null; }
   }
 
   // The built-in font: whatever the browser uses for system-ui / sans-serif (no file, so no font information to read).
@@ -1086,6 +1239,7 @@
     activate(rec);
   }
 
+  //#if full
   /* --- file picker (File System Access API when available) / URL input --- */
   const fileIn = $('#fontfile'), urlIn = $('#fonturl');
   $('#pickbtn').addEventListener('click', async () => {
@@ -1174,6 +1328,7 @@
     const u = (dt.getData('text/uri-list') || '').split('\n').find(l => l && !l.startsWith('#'));
     if (u) { urlIn.value = u.trim(); loadURL(u.trim()); }
   }, true);
+  //#endif
 
   /* =================== Layout controls =================== */
   sizeIn.addEventListener('input', queueApply);
@@ -1207,9 +1362,9 @@
   // "dark" group; the list is always sorted: light group first, then dark, each A→Z.
   // Not stored, but derived from these 6: --accent-bg (accent at 13%), the text colors on the footer / buttons / boxes / accent,
   // the lines, the slider track, the hover colors and the selection color.
-  const COLOR_KEY = 'fft-colors';
+  const COLOR_KEY = 'fft-colors';   //#full
   const FIELDS = ['text', 'bg', 'accent', 'footer', 'chip', 'box'];
-  const FIELD_LABEL = { text: 'Text color', bg: 'Background color', accent: 'Accent color', footer: 'Footer color', chip: 'Button color', box: 'Box color' };
+  const FIELD_LABEL = { text: 'Text color', bg: 'Background color', accent: 'Accent color', footer: 'Footer color', chip: 'Button color', box: 'Box color' };   //#full
   // The built-in colors of each mode (equal to the defaults in style.css)
   const DEFAULT_THEME = {
     light: { text: '#222222', bg: '#f6f6f6', accent: '#ff4242', footer: '#ffffff', chip: '#ececee', box: '#f0f0f0' },
@@ -1225,9 +1380,11 @@
     { name: 'Ocean',    mode: 'dark',  text: '#d6e6ff', bg: '#10233f', accent: '#4dabf7', footer: '#0b1a30', chip: '#17325a', box: '#173055' },
     { name: 'Terminal', mode: 'dark',  text: '#33ff66', bg: '#0b0b0b', accent: '#33ff66', footer: '#000000', chip: '#0f1f12', box: '#0f1a11' }
   ];
+  //#if full
   // The main colors of the page: one set for light mode, one for dark mode. The dark-mode button switches between them.
   // "Set to light/dark mode" replaces them (saved in localStorage and in the backup file).
   const THEME_KEY = 'fft-themecolors';
+  //#endif
 
   const hexOk = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v.trim());
   const isDarkHex = h => {
@@ -1243,16 +1400,19 @@
     return 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255);
   };
   const onColor = h => { const L = relLum(h); return 1.05 / (L + 0.05) > (L + 0.05) / 0.05 ? '#ffffff' : '#000000'; };
+  //#if full
   const normHex = v => {
     v = (v || '').trim().toLowerCase().replace(/^#/, '');
     if (/^[0-9a-f]{3}$/.test(v)) v = v.replace(/./g, '$&$&');
     return /^[0-9a-f]{6}$/.test(v) ? '#' + v : '';
   };
+  //#endif
   const hx2 = n => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
   const mixHex = (a, b, t) => {
     const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(a), B = p(b);
     return '#' + A.map((v, i) => hx2(v + (B[i] - v) * t)).join('');
   };
+  //#if full
   // the 6 colors of c (a missing or invalid one takes the built-in value of the mode); null when text or background are unusable
   const fillColors = (c, mode) => {
     if (!c || !hexOk(c.text) || !hexOk(c.bg)) return null;
@@ -1300,23 +1460,28 @@
   const isCoreColor = c => (c.name === 'Light' && c.mode === 'light') || (c.name === 'Dark' && c.mode === 'dark');
   PRESET_COLORS.filter(isCoreColor).forEach(p => { if (!colors.some(x => x.name === p.name && x.mode === p.mode)) colors.push(cleanColor(p)); });
   saveColors();
+  //#endif
 
   const themeColors = { light: { ...DEFAULT_THEME.light }, dark: { ...DEFAULT_THEME.dark } };
+  //#if full
   try {
     const t = JSON.parse(localStorage.getItem(THEME_KEY));
     if (t) ['light', 'dark'].forEach(k => { const f = fillColors(t[k], k); if (f) themeColors[k] = f; });
   } catch (e) {}
   const saveTheme = () => { try { localStorage.setItem(THEME_KEY, JSON.stringify(themeColors)); } catch (e) {} };
+  //#endif
 
+  //#if full
   const INP = { text: $('#txtcolor'), bg: $('#bgcolor'), accent: $('#acccolor'), footer: $('#footcolor'), chip: $('#chipcolor'), box: $('#boxcolor') };
   const colorListEl = $('#colorlist');
   const readInputs = () => { const o = {}; FIELDS.forEach(k => { o[k] = INP[k].value.toLowerCase(); }); return o; };
+  //#endif
   const curMode = () => document.body.classList.contains('darkmode') ? 'dark' : 'light';
   let flipping = false;   // true while a color change itself switches dark mode (the main colors must not be re-applied then)
 
   // Applies a color set: the 6 colors and everything derived from them become CSS variables on <body> (style.css uses only these).
   function paint(c) {
-    FIELDS.forEach(k => { INP[k].value = c[k]; });
+    FIELDS.forEach(k => { INP[k].value = c[k]; });   //#full
     const ffg = isDarkHex(c.footer) ? '#f5f5f5' : '#222222';
     const cfg = isDarkHex(c.chip) ? '#aaaaaa' : '#222222';
     const vars = {
@@ -1330,11 +1495,13 @@
     };
     Object.keys(vars).forEach(k => document.body.style.setProperty(k, vars[k]));
     document.documentElement.style.backgroundColor = c.bg;
+    //#if full
     colorLine = 'color: ' + c.text + '; background-color: ' + c.bg + ';';
     const d = DEFAULT_THEME[curMode()];
     colorCss = c.text !== d.text || c.bg !== d.bg ? 'color: ' + c.text + '; background-color: ' + c.bg + ';' : '';
+    //#endif
     applyStyles();
-    renderColors();
+    renderColors();   //#full
   }
   // switch the whole UI to dark / light mode without re-applying the main colors
   function forceDark(dark) {
@@ -1344,10 +1511,11 @@
   // a chosen color set: a dark background switches the UI to dark mode, a light one to light mode
   function setColors(c) { forceDark(isDarkHex(c.bg)); paint(c); }
   const applyThemeColors = () => paint(themeColors[curMode()]);
-  FIELDS.forEach(k => INP[k].addEventListener('input', () => setColors(readInputs())));
+  FIELDS.forEach(k => INP[k].addEventListener('input', () => setColors(readInputs())));   //#full
   // the dark-mode button: back to the main colors of the mode it switches to
   neg.addEventListener('change', () => { if (!flipping) applyThemeColors(); });
 
+  //#if full
   const ICON = { light: icn('light_mode'), dark: icn('dark_mode') };
 
   function renderColors() {
@@ -1535,7 +1703,9 @@
     requestAnimationFrame(updateBubbles);
   });
   renderColors();
+  //#endif
 
+  //#if full
   /* --- global UI scale (0.2x - 5x), saved in localStorage ---
      The - / + buttons move one logarithmic step (about 3.3%) at a time: 100 steps cover 0.2x - 5x and step 50 is exactly 1x.
      While the scale is far from 1x a "reset" badge is shown. It is counter-zoomed (zoom = 1 / scale), so it keeps its normal size
@@ -1578,7 +1748,16 @@
     try { s = parseFloat(localStorage.getItem(SCALE_KEY)) || 1; } catch (e) {}
     setScale(s, false);
   }
+  //#else
+  //= let uiScale = 1;
+  //= function setScale(v) {
+  //=   uiScale = Math.min(5, Math.max(0.2, +v || 1));
+  //=   document.documentElement.style.zoom = uiScale === 1 ? '' : uiScale;
+  //=   requestAnimationFrame(() => { updateBubbles(); scheduleGuides(); });
+  //= }
+  //#endif
 
+  //#if full
   /* --- footer rows (1 - 6), saved in localStorage ---
      1 = the normal single row. With more rows, packRows() fills row 1 first and moves to row 2 only when row 1 is full.
      When the items do not fit in the page width even with all rows, they run left to right through the rows with (about)
@@ -1757,13 +1936,20 @@
   rowsMinus.addEventListener('click', () => setRows(frows - 1));
   rowsPlus.addEventListener('click', () => setRows(frows + 1));
   try { setRows(parseInt(localStorage.getItem(ROWS_KEY), 10) || 1, false); } catch (e) { setRows(1, false); }
+  //#else
+  //= function revealAfterPack(sel) {
+  //=   const el = [...secEl().querySelectorAll(sel)].find(e => e.offsetWidth > 0);
+  //=   if (el) (el.closest('.font-slider') || el).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  //= }
+  //#endif
 
   /* =================== Text box helpers =================== */
   // Two separate text boxes: #Test (tests) and #Wiki (Wikipedia article). They never mix.
   const testBox = $('#Test');
-  const tab6El  = $('.tab6');
+  const tab6El  = $('.tab6');   //#full
   const boxP = box => box && box.querySelector('p[contenteditable]');
 
+  //#if full
   const WIKI_HINT = 'Fetch an article (you need an internet connection)';
   const wikiBox = document.createElement('div');
   wikiBox.id = 'Wiki'; wikiBox.className = 'tabcontent'; wikiBox.style.display = 'none';
@@ -2026,6 +2212,7 @@
     }
     updateGlyphSize();
   }
+  //#endif
 
   function setBoxText(p, text) {
     p.textContent = '';
@@ -2040,11 +2227,13 @@
     setBoxText(boxP(box), text);
   }
 
+  //#if full
   function showWikiHint() {
     wikiBox.innerHTML = '<p class="wikihint" dir="ltr"></p>';
     wikiBox.firstChild.textContent = WIKI_HINT;
   }
   showWikiHint();
+  //#endif
 
   /* =================== Guides: ascender / descender (solid), x-height / cap-height (dotted) =================== */
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -2073,7 +2262,8 @@
   function drawGuides() {
     if (!guidesOn) return;
     const m = active && active.metrics;
-    const box = [testBox, wikiBox, glyphBox].find(b => b.style.display !== 'none');
+    const box = [testBox, wikiBox, glyphBox].find(b => b.style.display !== 'none');   //#full
+    //#embed const box = testBox;
     if (!m || !box) { clearGuides(); return; }
     const dyn = target.getBoundingClientRect();
     const styles = new Map();
@@ -2127,14 +2317,15 @@
   });
   // redraw when the text, the layout or the font changes
   new MutationObserver(scheduleGuides).observe(target, { childList: true, subtree: true, characterData: true });
-  if (window.ResizeObserver) { let jW = 0; new ResizeObserver(() => { scheduleGuides(); if (viewGlyph) updateGlyphSize(); if (justOn && target.clientWidth !== jW) { jW = target.clientWidth; scheduleJust(); } }).observe(target); }
+  if (window.ResizeObserver) { let jW = 0; new ResizeObserver(() => { scheduleGuides(); if (viewGlyph) updateGlyphSize(); if (justOn && target.clientWidth !== jW) { jW = target.clientWidth; scheduleJust(); } }).observe(target); }   //#full
+  //#embed if (window.ResizeObserver) new ResizeObserver(scheduleGuides).observe(target);
   window.addEventListener('resize', scheduleGuides);
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', scheduleGuides);
 
   /* =================== Text alignment: Right / Left / Justify (radio buttons; none selected = the text's own alignment) =================== */
   let curAlign = '';
   $$('input[name="align"]').forEach(r => r.addEventListener('click', () => {
-    if (justOn) setJustify(false);   // a picked alignment and kashida justification exclude each other
+    if (justOn) setJustify(false);   // a picked alignment and kashida justification exclude each other   //#full
     if (curAlign === r.value) { r.checked = false; curAlign = ''; }   // click the active one again to go back to the default
     else curAlign = r.value;
     target.classList.remove('al-right', 'al-center', 'al-left', 'al-justify');
@@ -2142,6 +2333,7 @@
     scheduleGuides();
   }));
 
+  //#if full
   /* =================== Justify with kashida (Raqim Kashida, MIT: https://github.com/aliftype/raqim-kashida) ===================
      Layout tab: "Justify" turns it on, "Justify Settings" opens the settings.
      How it works: the library (WebAssembly, loaded the first time Justify is turned on) tells where in a word a kashida (tatweel, U+0640)
@@ -2640,6 +2832,7 @@
     renderJustSets(); justChanged();
   }
   buildJustUI();
+  //#endif
 
   /* =================== Toast =================== */
   const toast = $('#div2');
@@ -2682,6 +2875,7 @@
   const TXT_EN = `Although typically applied to printed, published, broadcast, and reproduced materials in contemporary times, all words, letters, symbols, and numbers written alongside the earliest naturalistic drawings by humans may be called typography. The uneven spacing of the impressions on brick stamps found in the Mesopotamian cities of Uruk and Larsa, dating from the second millennium B.C., may be evidence of type, wherein the reuse of identical characters was applied to create cuneiform text. Babylonian cylinder seals were used to create an impression on a surface by rolling the seal on wet clay. Typography also was implemented in the Phaistos Disc, an enigmatic Minoan printed item from Crete, which dates to between 1850 and 1600 B.C. It has been proposed that Roman lead pipe inscriptions were created with movable type printing, but German typographer Herbert Brekle recently dismissed this view.(from Wikipedia)
 0123456789!@#$%^&*()_+-={}[]:"'?/<>,.`;
 
+  //#if full
   const ZWNJ_test = `آتش‌رنگ - آب‌انار - آبادی‌نشین - آب‌بها - آب‌تبلور - آبله‌رو - آبگینه‌خانه - آبمیوه‌فروشی - آبی‌زنگاری - آپارات‌چی - آب‌و‌نان‌دار - آب‌و‌هوا - آپارتمان‌نشین - آب‌هراسی - آت‌آشغال - پاره‌آتشین - آجودان‌کشوری - آجیده‌دوزی - چهارشنبه‌سوری - آتشین‌مزاج - آتل‌بندی - آجر‌سه‌سانتی - آجیل‌شور - لعاب‌دار - آجان‌کشی - آج‌دار - آج‌گاه - آدم‌حسابی - آخرت‌شناس - آداب‌دانی - آدامس‌بادکنکی - آدم‌ربایی - آذری‌زبان - آذین‌بخش - آرام‌بخش - آدمی‌گری - آرامش‌بخش - دندان‌پزشکی - آرمان‌پرست - آرایش‌کرده - آرش‌وار - کتاب‌داری - آرایش‌گری - آرایه‌گر - آر‌پی‌جی‌زن - آرک‌آماس - آرمان‌گرایانه - آرتیست‌بازی - آرنج‌بند - آرد‌بیزی - آرواره‌داران - آریایی‌نژاد - آزرده‌جان - بخت‌آزمایی - آسان‌شکن - آس‌باز - آستان‌بوس - آستین‌بارانی - آسمان‌غُرنبه - آسیای‌بادی - آسفالت‌ریزی - آسیب‌پذیر - آسوده‌حال - آب‌رسان - آسیب‌رسیده - سبب‌زا - آسیاب‌بادی - آسیاب‌گردان - آرام‌ناپذیر - آسیمه‌سر - آشغال‌گیر - آشفته‌بازار - آشتی‌پذیر - آشوب‌طلبانه - آش‌خور - آشیانه‌دوست - آشنا‌بازی - آشنایی‌زدایی - آصف‌جاه - آفتاب‌آسا - آفت‌پذیر- آکروبات‌باز - آفرینش‌گر - آکنده‌گوش - آگاه‌دل - آقا‌بالاسر - آگاهی‌رسانی - آگهی‌گشت‌ - آلودگی‌اقتصادی - آلاخون‌والاخون - آلوده‌دامان - آلونک‌نشین - آل‌برده - آلبومین‌دار - آمپول‌زن - آمین‌گو‌ی - آماده‌باش - آمرزش‌خواهی - آماده‌کننده - آماس‌کش - آموزش‌دیده - آمپلی‌فایر - آمونیاک‌سازی - آهک‌پزی - آهن‌تراش - آه‌و‌اسف - آیش‌بندی - آهنگ‌دار - آیفون‌تصویری - آهن‌یاب - آهنین‌بازو - آیات‌عظام - آیت‌الله‌العظمی - آینه‌بازی - آیینه‌خانه - آیین‌بندی - اباحه‌گرایی - ابداع‌شدنی - ابری‌ساز - ابریشم‌باف - ابزار‌فروشی - ابنای‌بشر - ابطال‌پذیر - ابقاه‌الله - ابلاغ‌نامه - ابو‌القاسم - ابناء‌الزمان - اتاق‌دار - ابهام‌زا - اتحادیه‌گرایی - اتم‌شکافی - اتومبیل‌رانی - اتوبان‌سازی - اجاره‌بندی - اتوبوس‌رانی - اثاث‌کشی - اثبات‌گرا - اجاره‌نشینی - اجازه‌نامه - اجاق‌برقی - دانش‌آموز - دست‌نوشته - دست‌کم - ریسک‌پذیر - دانش‌آموز - میدان‌دار - واژه‌ها - کلاس‌ها - اتاق‌ها - دوستانه‌ - کتاب‌دوست - کتاب‌خوان - کتاب‌خانه‌ای - ایرانی‌ها - پیش‌نویس - به‌زودی - بی‌اختیار - بی‌وفا - بی‌ادب - بی‌قرار - بی‌شک - بی‌نظیر - بی‌پرده - بی‌شمار - بی‌معرفتی - بی‌غايت - بی‌تفاوت - بی‌شرمانه - بی‌اشتها - بی‌بار - بی‌پول - بی‌سرپرست - بی‌قاعده - بی‌یاور - یک‌مرتبه - یدک‌کش - یک‌دست - خودبزرگ‌بین - برون‌گرایی - نیم‌کره - نیم‌سال - نیمه‌شب - نیم‌نگاهی - شب‌هنگام - شبانه‌روز - شب‌بیدار - شب‌پره - صبح‌خیز - صبح‌گاه - روزنامه‌نگار - سپیده‌دم - کهنه‌شده - کهنه‌کار - تازه‌شده - تازه‌کار - دانش‌آموخته - جدیت‌ورز - جوان‌دل - کودک‌محور - زندگی‌بخش - زندگی‌نامه‌نویس - جان‌بخش - روح‌بخش - پشتی‌بان - پیش‌کسوت - پیشا‌نمونه - پیش‌پرده - پیش‌کار - پیش‌گو - پیش‌پرداخت - پیش‌رو - پیش‌کار - پیش‌فرض - پیش‌داوری - پس‌نویس - پس‌زمینه - پس‌انداز - پس‌اندازها - پس‌زمینه‌ای - خواب‌آلوده - خوابیده‌ها - خواب‌آور - یادداشت‌ها - یادداشت‌کننده - کاربری‌ها - کارخانه‌دار - کارشناسی‌ها - کتابخانه‌ها - کتاب‌باز - زبان‌شناسی - کتاب‌ها - مکتب‌خانه - مکتوب‌شده - نامه‌رسان - نامه‌ها - پیک‌آور - پیغام‌آور - گزارش‌گر - گزارشگرانه‌تر - پرسش‌نامه - پرسشنامه‌ها - پاسخ‌نامه‌ها - جواب‌گو - حل‌شونده - مسئله‌جو - مسائل‌نگاری - صورت‌مساله - روی‌کرد - راه‌کار - چاره‌یابی - چاره‌برانداز - تلاش‌جو - موفقیت‌آمیز - نیمه‌صادق - نیمه‌راستگو - کارشناس‌ها - پژوهش‌ها - پژوهشگرانه‌تر - مطالعه‌گر - تجربه‌شده - تجربه‌آموز - دوستی‌ها - هم‌دلی - همدلانه‌تر - هم‌زبانان - همراه‌شونده - همین‌جا - همین‌حالا - همه‌کس - همه‌جاها - همه‌کس‌ها - همه‌چیزدان`;
   const LAYOUT_FA = `<div class="layout" dir="rtl">
 <p class="sizelabel">Heading 60px, Subhead 24px, Body 16px</p>
@@ -2746,16 +2940,20 @@ He added that extreme hairiness might also be more of a disadvantage than an adv
 If you have a heavy coat of long thick hairs it is easier for parasites to hide, even if you can detect them. “Our proposal is that we retain the fine covering because it aids detection and if we lost all hair, even the relatively invisible fine hair, our detection ability goes right down.”</p>
 </div>
 </div>`;
+  //#endif
 
   // Built-in tests. They are copied into the user's list on the first visit (localStorage) and can be removed like any other.
   // "about", "author" and "link" are optional (plain text; link must be http/https).
+  // (the embed keeps only Farsi, Arabic, Quran and English: the others are marked "full")
   const PRESETS = [
     { name: 'Farsi', text: TXT_FA,
       author: 'AI',
       about: 'Persian specimen: a paragraph about writing culture with mixed Persian and Latin words and parentheses, to check Latin/Persian mixing and running text.' },
+    //#if full
     { name: 'Farsi Pairwords', text: ' آب اداب ارج داداش ده اراذل ارم اردن اردو ری ارگ رزاق دف دروغ فرط ارض درنا بنّا جایزه نجات ترسا انتشار صابون فضا طاهر تطابق عادت معاد قابل تقارن کاغذ نکات لازم سیلاب ماما نما رها مهارت تب نخ ندا دانش فرائض شرایط نصرت بطری نفت شریف قایق ریگ تلوزیون دائم بن مشابه بها بی‌بی صنایع بیغ تعداد طبیعت ترتیب سیخ بیخواب سند شیر میش فیض بیضی بلیط متظاهر حیف میقات عمیق شیک نیکان مثل نیلوفر حتماً شبنم بتن مینو شبیه تپه آبتنی راحت محب حج ثامن‌الحجج حجت هاجر تجزیه مجد حدید حس نجس جسارت خجسته حضیر محصور خط حظور حقیر محقّر نجف گرباچف حق حک محک حل محل سانچی مراحم منجم حمایت محموله جن لحن مجتبی جویا شاخه باغچه جهل مجهول کراچی مرجع مرتجع جعفر مجعول شب نسخ راسخ سحر مسجد سد حسد نشر شش نشست نشستن شصت مسطور تأسف کشف سفر مشقّت قاشق مشق سگ مشک شکر مرسل نسل سلیم مسلمان قاسم قسم مسمار سمنان مونس جنس سواد حسود کاسه فرانسه شهود مشهد کاشی عیسی وسط قسط واسع سعید مسعود غاصب ناصح فصخ فصحا صحبت قاصد مقصد ضرر صف منصف صفر تصفیه واصل متخاصم صمصام تخصص اظطراب مظطرب خصم تصمیم خلاصه قصه صهیون متصل تصلی وصلت صورت مرصع صعود تصعید رطب مطب طبیعت مطبوعات سطح ظرف عاطفه عطف مظفر منطق طهران مطهر خاطی عطسه قاطع طعمه راغب غبار معجزه عج اعراب تغزیه عسل مغشوش عصر معطوف واعظ غفار مغفور شعف شاغل فعل علت معلول غم طعم مغموم طعنه لعن عواقب معوقه عهد تعهد مراغه داعی فخر مفخّم قداست نقد قس‌علی‌هذا نفس فساد مفسد نقص ناقص فطرت فقط قطار تقطیر واقف سقف قفقاز غافل نقل قله تقلید قم قمار لقمه فن قو مقوا کلافه منطقه قهرمان مقهور تلافی نفی‌سلطه مدافع نفع فعال مفعول راگبی گچ مرکب کجاوه تکخور گدا لگد نرگس مگس گسل گفتار مکفی کک گنجشککان گل گلدان تکل تراکم گمراه تکمیل واگن لگن گواه درشکه ناگه ناگهان نگهبان سنگی خاکی سنگک کک راکع گعده قالب صالح فلج لذت بلد مولر طلسم لشکر خالص مخلص لطف تلطیف لطافت خلط الف خلف لفظ خلفا خالق خلق لک‌لک فلک لگد ملکان مجلل تألم ظلم عالمیان سالن لؤلؤ سلسله لهیب سومالی خلع لعاب ملامت بمب مخ لمحه مدت نمد مراکش تمبر مس لمس تمساح مصطفی رمق عمق نمک اُمگا تمکین کامل نمل ملت تملق ممتاز ترکمن سراسیمه شامی آنمی لامع معده طمع شمعدانی ابا ببب پپپ تتت ثثث ججج چچچ ححح خخخ دبد ذبذ ربر زبز ژبژ سسس ششش صصص ضضض ططط ظظظ ععع غغغ ففف ققق ککک گگگ للل ممم ننن ووو ههه ییی ',
       author: 'Amin Abedi', link: 'https://github.com/fontamin',
       about: 'A comprehensive wordlist covering all adjacent Persian letter pairs' },
+    //#endif
     { name: 'Arabic', text: TXT_AR,
       author: 'from Wikipedia', link: 'https://wikipedia.com',
       about: 'Arabic specimen: three paragraphs about Damascus steel, taken from Wikipedia. Contains many diacritics (tashkeel), good for checking mark positioning.' },
@@ -2765,6 +2963,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     { name: 'English', text: TXT_EN,
       author: 'from Wikipedia', link: 'https://wikipedia.com',
       about: 'English specimen about the origins of typography (from Wikipedia), followed by digits and common symbols.' },
+    //#if full
     {
       author: 'Saleh Souzanchi', link: 'https://github.com/zoghal',
       name: 'Layout Fa', html: LAYOUT_FA,
@@ -3031,15 +3230,20 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   text: ` آأآ - آإآ - آاآ - آؤآ - آوآ - آئآ - آیآ - آبآ - آتآ - آثآ - آ‍آ - آپآ - آجآ - آحآ - آخآ - آچآ - آدآ - آذآ - آرآ - آزآ - آژآ - آسآ - آشآ - آصآ - آضآ - آطآ - آ‬آ - آظآ - آعآ - آغآ - آفآ - آقآ - آكآ - آکآ - آگآ - آمآ - آنآ - أآأ - أإأ - أاأ - أؤأ - أوأ - أئأ - أیأ - أبأ - أتأ - أثأ - أ‍أ - أپأ - أجأ - أحأ - أخأ - أچأ - أدأ - أذأ - أرأ - أزأ - أژأ - أسأ - أشأ - أصأ - أضأ - أطأ - أ‬أ - أظأ - أعأ - أغأ - أفأ - أقأ - أكأ - أکأ - أگأ - أمأ - أنأ - إآإ - إأإ - إاإ - إؤإ - إوإ - إئإ - إیإ - إبإ - إتإ - إثإ - إ‍إ - إپإ - إجإ - إحإ - إخإ - إچإ - إدإ - إذإ - إرإ - إزإ - إژإ - إسإ - إشإ - إصإ - إضإ - إطإ - إ‬إ - إظإ - إعإ - إغإ - إفإ - إقإ - إكإ - إکإ - إگإ - إمإ - إنإ - اآا - اأا - اإا - ااا - اؤا - اوا - ائا - ایا - ابا - اتا - اثا - ا‍ا - اپا - اجا - احا - اخا - اچا - ادا - اذا - ارا - ازا - اژا - اسا - اشا - اصا - اضا - اطا - ا‬ا - اظا - اعا - اغا - افا - اقا - اكا - اکا - اگا - اما - انا - ؤآؤ - ؤأؤ - ؤإؤ - ؤاؤ - ؤؤؤ - ؤوؤ - ؤئؤ - ؤیؤ - ؤبؤ - ؤتؤ - ؤثؤ - ؤ‍ؤ - ؤپؤ - ؤجؤ - ؤحؤ - ؤخؤ - ؤچؤ - ؤدؤ - ؤذؤ - ؤرؤ - ؤزؤ - ؤژؤ - ؤسؤ - ؤشؤ - ؤصؤ - ؤضؤ - ؤطؤ - ؤ‬ؤ - ؤظؤ - ؤعؤ - ؤغؤ - ؤفؤ - ؤقؤ - ؤكؤ - ؤکؤ - ؤگؤ - ؤمؤ - ؤنؤ - وآو - وأو - وإو - واو - وؤو - ووو - وئو - ویو - وبو - وتو - وثو - و‍و - وپو - وجو - وحو - وخو - وچو - ودو - وذو - ورو - وزو - وژو - وسو - وشو - وصو - وضو - وطو - و‬و - وظو - وعو - وغو - وفو - وقو - وكو - وکو - وگو - ومو - ونو - ئآئ - ئأئ - ئإئ - ئائ - ئؤئ - ئوئ - ئدئ - ئذئ - ئرئ - ئزئ - ئژئ - یآی - یأی - یإی - یای - یؤی - یوی - یدی - یذی - یری - یزی - یژی - بآب - بأب - بإب - باب - بؤب - بوب - بدب - بذب - برب - بزب - بژب - تآت - تأت - تإت - تات - تؤت - توت - تدت - تذت - ترت - تزت - تژت - ثآث - ثأث - ثإث - ثاث - ثؤث - ثوث - ثدث - ثذث - ثرث - ثزث - ثژث - پآپ - پأپ - پإپ - پاپ - پؤپ - پوپ - پدپ - پذپ - پرپ - پزپ - پژپ - جآج - جأج - جإج - جاج - جؤج - جوج - جدج - جذج - جرج - جزج - جژج - حآح - حأح - حإح - حاح - حؤح - حوح - حدح - حذح - حرح - حزح - حژح - خآخ - خأخ - خإخ - خاخ - خؤخ - خوخ - خدخ - خذخ - خرخ - خزخ - خژخ - چآچ - چأچ - چإچ - چاچ - چؤچ - چوچ - چدچ - چذچ - چرچ - چزچ - چژچ - دآد - دأد - دإد - داد - دؤد - دود - دئد - دید - دبد - دتد - دثد - د‍د - دپد - دجد - دحد - دخد - دچد - ددد - دذد - درد - دزد - دژد - دسد - دشد - دصد - دضد - دطد - د‬د - دظد - دعد - دغد - دفد - دقد - دكد - دکد - دگد - دمد - دند - ذءذ - ذآذ - ذأذ - ذإذ - ذاذ - ذؤذ - ذوذ - ذئذ - ذیذ - ذبذ - ذتذ - ذثذ - ذ‍ذ - ذپذ - ذجذ - ذحذ - ذخذ - ذچذ - ذدذ - ذذذ - ذرذ - ذزذ - ذژذ - ذسذ - ذشذ - ذصذ - ذضذ - ذطذ - ذ‬ذ - ذظذ - ذعذ - ذغذ - ذفذ - ذقذ - ذكذ - ذکذ - ذگذ - ذمذ - ذنذ - رءر - رآر - رأر - رإر - رار - رؤر - رور - رئر - ریر - ربر - رتر - رثر - ر‍ر - رپر - رجر - رحر - رخر - رچر - ردر - رذر - ررر - رزر - رژر - رسر - رشر - رصر - رضر - رطر - ر‬ر - رظر - رعر - رغر - رفر - رقر - ركر - رکر - رگر - رمر - رنر - زءز - زآز - زأز - زإز - زاز - زؤز - زوز - زئز - زیز - زبز - زتز - زثز - ز‍ز - زپز - زجز - زحز - زخز - زچز - زدز - زذز - زرز - ززز - زژز - زسز - زشز - زصز - زضز - زطز - ز‬ز - زظز - زعز - زغز - زفز - زقز - زكز - زکز - زگز - زمز - زنز - ژءژ - ژآژ - ژأژ - ژإژ - ژاژ - ژؤژ - ژوژ - ژئژ - ژیژ - ژبژ - ژتژ - ژثژ - ژ‍ژ - ژپژ - ژجژ - ژحژ - ژخژ - ژچژ - ژدژ - ژذژ - ژرژ - ژزژ - ژژژ - ژسژ - ژشژ - ژصژ - ژضژ - ژطژ - ژ‬ژ - ژظژ - ژعژ - ژغژ - ژفژ - ژقژ - ژكژ - ژکژ - ژگژ - ژمژ - ژنژ - سآس - سأس - سإس - ساس - سؤس - سوس - سدس - سذس - سرس - سزس - سژس - شآش - شأش - شإش - شاش - شؤش - شوش - شدش - شذش - شرش - شزش - شژش - صآص - صأص - صإص - صاص - صؤص - صوص - صدص - صذص - صرص - صزص - صژص - ضآض - ضأض - ضإض - ضاض - ضؤض - ضوض - ضدض - ضذض - ضرض - ضزض - ضژض - طآط - طأط - طإط - طاط - طؤط - طوط - طدط - طذط - طرط - طزط - طژط - ظآظ - ظأظ - ظإظ - ظاظ - ظؤظ - ظوظ - ظدظ - ظذظ - ظرظ - ظزظ - ظژظ - عآع - عأع - عإع - عاع - عؤع - عوع - عدع - عذع - عرع - عزع - عژع - غآغ - غأغ - غإغ - غاغ - غؤغ - غوغ - غدغ - غذغ - غرغ - غزغ - غژغ - فآف - فأف - فإف - فاف - فؤف - فوف - فدف - فذف - فرف - فزف - فژف - قآق - قأق - قإق - قاق - قؤق - قوق - قدق - قذق - قرق - قزق - قژق - كآك - كأك - كإك - كاك - كؤك - كوك - كدك - كذك - كرك - كزك - كژك - کآک - کأک - کإک - کاک - کؤک - کوک - کدک - کذک - کرک - کزک - کژک - گآگ - گأگ - گإگ - گاگ - گؤگ - گوگ - گدگ - گذگ - گرگ - گزگ - گژگ - مآم - مأم - مإم - مام - مؤم - موم - مدم - مذم - مرم - مزم - مژم - نآن - نأن - نإن - نان - نؤن - نون - ندن - نذن - نرن - نزن - نژن
 `
 },
+    //#endif
   ];
 
+  //#if full
   // All tests (built-in + yours) are saved automatically in this browser (localStorage)
   const TEST_KEY = 'fft-tests';
+  //#endif
   let tests = [];
+  //#if full
   let stored = null;
   try { stored = JSON.parse(localStorage.getItem(TEST_KEY)); } catch (e) {}
   const validTest = t => t && typeof t.name === 'string' &&
     ((typeof t.text === 'string' && t.text.trim()) || (typeof t.html === 'string' && t.html.trim()));
+  //#endif
   // "fontamin.com" -> "https://fontamin.com"; anything that isn't http(s) is dropped (no javascript: links)
   const normLink = v => {
     v = typeof v === 'string' ? v.trim() : '';
@@ -3055,6 +3259,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     const l = normLink(t.link); if (l) o.link = l;
     return o;
   };
+  //#if full
   const saveTests = () => {
     try { localStorage.setItem(TEST_KEY, JSON.stringify(tests.map(cleanTest))); } catch (e) {}
   };
@@ -3065,27 +3270,31 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     tests = PRESETS.map(cleanTest);
     saveTests();
   }
+  //#else
+  //= tests = PRESETS.map(cleanTest);
+  //#endif
 
   const testListEl = $('#testlist');
   let activeTest = null;
-  let wikiInfo = null;     // {title, url} of the article in the Wiki box
+  let wikiInfo = null;     // {title, url} of the article in the Wiki box   //#full
 
   const LAST_KEY = 'fft-lasttest';
   const DEFAULT_TEST = 'Farsi';
   function showTest(t) {
     activeTest = t;
     try { localStorage.setItem(LAST_KEY, t.name); } catch (e) {}
-    setWikiMode(false);
+    setWikiMode(false);   //#full
     if (t.html) testBox.innerHTML = t.html;
     else showPlain(testBox, t.text);
     renderTests();
     updateAbout();
-    if (justOn) scheduleJust();
+    if (justOn) scheduleJust();   //#full
   }
 
   // Always alphabetical: Latin names first (A→Z), then Arabic-script names (Arabic/Persian alphabet)
   const RTL_START = /^[^\p{L}\p{N}]*[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/u;
   const sortTests = () => {
+    if (EMBED) return;   // an embed keeps the order the site owner chose
     const grp = n => RTL_START.test(n) ? 1 : 0;
     tests.sort((a, b) => {
       const ga = grp(a.name), gb = grp(b.name);
@@ -3105,6 +3314,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       nb.type = 'button'; nb.className = 'chipname';
       nb.textContent = shorten(t.name, CHIP_MAX); nb.title = t.name;
       nb.addEventListener('click', () => showTest(t));
+      //#if full
       const xb = document.createElement('button');
       xb.type = 'button'; xb.className = 'chipx'; xb.innerHTML = icn('close'); xb.title = 'Remove';
       xb.addEventListener('click', () => {
@@ -3112,11 +3322,14 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
         if (activeTest === t) { activeTest = null; updateAbout(); }
         saveTests(); renderTests();
       });
-      chip.append(nb, xb);
+      //#endif
+      chip.append(nb, xb);   //#full
+      //#embed chip.append(nb); nb.classList.add('nox');
       testListEl.appendChild(chip);
     });
   }
 
+  //#if full
   /* --- export / import (share tests as a .json file) --- */
   const dangerZone = $('#dangerzone');
   const mkBtn = (txt, title, parent) => {
@@ -3321,7 +3534,9 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
   });
+  //#endif
 
+  //#if full
   /* =================== Info button (i) + popup =================== */
   // Test About text normally; when the Wiki box is on screen, the article link.
   const aboutBtn = document.createElement('button');
@@ -3418,7 +3633,11 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   document.addEventListener('pointerdown', e => {
     if (!aboutBtn.contains(e.target) && !aboutPop.contains(e.target)) aboutPop.classList.remove('open');
   });
+  //#else
+  //= function updateAbout() {}   // the embed has no info button
+  //#endif
 
+  //#if full
   /* =================== Wikipedia (Wiki tab) =================== */
   const WIKI_MAX = 12000;
   const WIKI_LANGS = [['fa', 'فارسی'], ['ar', 'عربی'], ['en', 'English']];
@@ -3541,6 +3760,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     wikiBtn.classList.remove('busy');
   }
   wikiBtn.addEventListener('click', fetchWiki);
+  //#endif
 
   /* =================== Copy code =================== */
   function copyText(text) {
@@ -3553,7 +3773,8 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     el.value = text; document.body.appendChild(el); el.select();
     document.execCommand('copy'); el.remove();
   }
-  [t1, t2, t3, statusEl, wikiStatus].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));
+  [t1, t2, t3, statusEl, wikiStatus].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));   //#full
+  //#embed [t1, t2, t3, statusEl].forEach(el => el.addEventListener('click', () => { copyText(el.textContent); flash(); }));
 
   /* =================== Tabs: bubbles refresh =================== */
   const section = $('.pc-tab > section');
@@ -3565,7 +3786,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
       const lb = $('.pc-tab nav .' + id + ' label');
       if (lb) lb.scrollIntoView({ block: 'nearest', inline: 'nearest' });   // tab bar scrolls when the UI scale is big
       // Test tab -> test text, or the article when the Wiki button is on. Other tabs keep whatever is on screen.
-      if (id === 'tab6') { viewWiki = wikiOn; viewGlyph = glyphOn; syncView(); }
+      if (id === 'tab6') { viewWiki = wikiOn; viewGlyph = glyphOn; syncView(); }   //#full
       updateAbout();
       requestAnimationFrame(updateBubbles);
       if (id === 'tab5') requestAnimationFrame(renderList);
@@ -3573,9 +3794,12 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     });
   });
   window.addEventListener('resize', updateBubbles);
+  //#if full
   // the sticky "↻ all / × all" group gets its shadow once the row has been scrolled
   section.addEventListener('scroll', () => $('.tab5').classList.toggle('scrolled', section.scrollLeft > 0), { passive: true });
+  //#endif
 
+  //#if full
   /* =================== Switch tabs by hover (mouse) / touch-drag (touch), optional: Layout Settings =================== */
   // Off by default: a tab only opens with a click (a mouse that brushes the tab names must not change the tab).
   // On: a mouse opens a tab after resting on its name for a moment; a finger that touches the tab names and slides
@@ -3611,6 +3835,7 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     goTab(best);
   });
   ['pointerup', 'pointercancel'].forEach(t => window.addEventListener(t, () => { tabDragging = false; }));
+  //#endif
 
   /* Tabs open with a click. While the mouse is over the footer, the Left / Right arrow keys move between the tabs
      (in the order they are shown: Font, Layout, Test, Variation, OpenType, About). */
@@ -3621,27 +3846,32 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   const TAB_ORDER = ['tab5', 'tab1', 'tab6', 'tab2', 'tab3', 'tab4'];
   // next / previous tab; after the last one it starts again from the first (and the other way round)
   function stepTab(dir) {
-    const cur = TAB_ORDER.findIndex(id => document.getElementById(id).checked);
-    const next = (cur + dir + TAB_ORDER.length) % TAB_ORDER.length;
-    if (next !== cur) document.getElementById(TAB_ORDER[next]).click();
+    const order = TAB_ORDER.filter(id => !$('.pc-tab nav li.' + id).classList.contains('fft-off'));   // an embed may hide tabs
+    const cur = order.findIndex(id => document.getElementById(id).checked);
+    const next = (cur + dir + order.length) % order.length;
+    if (next !== cur) document.getElementById(order[next]).click();
   }
   // deeper (+1) / back (-1) in the sub-menus of the current tab. Returns true when something changed.
   function stepMenu(dir) {
     const id = checkedTab();
     if (dir > 0) {
-      if (id === 'tab1' && !tab1Row.classList.contains('colormode') && !tab1Row.classList.contains('justmode')) { colorToggle.click(); return true; }
+      if (id === 'tab1' && !tab1Row.classList.contains('colormode') && !tab1Row.classList.contains('justmode')) { colorToggle.click(); return true; }   //#full
       if (id === 'tab2' && !tab2Row.classList.contains('instmode')) { instToggle.click(); return true; }
+      //#if full
       if (id === 'tab6') {
         if (!wikiOn && !glyphOn) { wikiToggle.click(); return true; }       // Test -> Wiki
         if (wikiOn) { setMode('glyph'); updateAbout(); return true; }        // Wiki -> Glyph List
       }
+      //#endif
       return false;
     }
+    //#if full
     if (id === 'tab6' && glyphOn) {                                          // Glyph List -> Wiki
       backing = true; setMode('wiki'); updateAbout();
       setTimeout(() => { backing = false; }, 60);
       return true;
     }
+    //#endif
     if (footBar.classList.contains('submenu')) { backBar.click(); return true; }   // slide the open sub-menu away
     return false;
   }
@@ -3665,7 +3895,16 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   // Deltas are summed, so one notch of a mouse wheel = one tab, and a short pause after each switch keeps a
   // trackpad's inertia from spinning through all the tabs. Horizontal scrolling (deltaX) is left alone: it scrolls the row.
   let wheelAcc = 0, wheelLast = 0, wheelLock = 0;
+  // In an embed the wheel switches tabs only after the visitor has clicked or tapped in the tester, and stops again when
+  // the mouse leaves it: someone scrolling the host page past the tester keeps scrolling the page.
+  let wheelArmed = !EMBED;
+  if (EMBED) {
+    document.addEventListener('pointerdown', () => { wheelArmed = true; }, true);
+    document.documentElement.addEventListener('mouseleave', () => { wheelArmed = false; });
+    window.addEventListener('blur', () => { wheelArmed = false; });
+  }
   footerEl.addEventListener('wheel', e => {
+    if (!wheelArmed) return;
     if (e.ctrlKey || e.metaKey || e.shiftKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // ctrl + wheel = browser zoom; shift + wheel = scrolls the row sideways
     if (document.querySelector('#testmodal.open, #colormodal.open')) return;
     e.preventDefault();
@@ -3758,14 +3997,15 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   backBar.id = 'backbar'; backBar.type = 'button'; backBar.innerHTML = icn('expand_more'); backBar.title = 'Back';
   footBar.appendChild(backBar);
   const tabRowIn = (id) => {
-    if (id === 'tab1') return tab1Row.classList.contains('colormode') ? colorToggle : tab1Row.classList.contains('justmode') ? justToggle : null;
+    if (id === 'tab1') return tab1Row.classList.contains('colormode') ? colorToggle : tab1Row.classList.contains('justmode') ? justToggle : null;   //#full
     if (id === 'tab2') return tab2Row.classList.contains('instmode') ? instToggle : null;
-    if (id === 'tab6') return wikiOn ? wikiToggle : glyphOn ? glyphToggle : null;
+    if (id === 'tab6') return wikiOn ? wikiToggle : glyphOn ? glyphToggle : null;   //#full
     return null;
   };
   const checkedTab = () => ['tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6'].find(id => document.getElementById(id).checked);
   const syncBack = () => footBar.classList.toggle('submenu', !!tabRowIn(checkedTab()));
-  const subGroup = id => id === 'tab1' ? (tab1Row.classList.contains('justmode') ? $('#justgroup') : $('#colorgroup')) : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');
+  const subGroup = id => id === 'tab1' ? (tab1Row.classList.contains('justmode') ? $('#justgroup') : $('#colorgroup')) : id === 'tab2' ? $('#instgroup') : wikiOn ? $('#wikigroup') : $('#glyphgroup');   //#full
+  //#embed const subGroup = () => $('#instgroup');
   // back: the open sub-menu slides down and away, then the normal row of the tab comes back
   let finishBack = null;   // finishes the running "back" animation at once
   backBar.addEventListener('click', () => {
@@ -3813,13 +4053,33 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
   $('#tab5').checked = true;
   section.scrollLeft = 0;
 
+  /* --- embed: hide the tabs the site owner turned off, pick the first tab --- */
+  const TAB_ID = { font: 'tab5', layout: 'tab1', test: 'tab6', variation: 'tab2', opentype: 'tab3', about: 'tab4' };
+  if (EMBED) {
+    const order = Object.keys(TAB_ID);   // same order as the menu
+    const on = EMBED.tabs.filter(t => TAB_ID[t]);
+    const shown = on.length ? on : order;
+    order.forEach(t => {
+      if (shown.includes(t)) return;
+      $$('.pc-tab section .' + TAB_ID[t] + ', .pc-tab nav li.' + TAB_ID[t]).forEach(el => el.classList.add('fft-off'));
+    });
+    const first = shown.includes(EMBED.tab) ? EMBED.tab : order.find(t => shown.includes(t));
+    $('#' + TAB_ID[first]).checked = true;
+    // tells the parent page which tab is open (the builder's preview reopens on it after a change)
+    order.forEach(t => $('#' + TAB_ID[t]).addEventListener('change', e => { if (e.target.checked) post({ fft: 'tab', tab: t }); }));
+    post({ fft: 'tab', tab: first });
+    if (shown.length === 1) document.documentElement.classList.add('fft-onetab');
+  }
+
   addSystemFont();
+  //#if full
   // Raqim Kashida: right after the page starts it is loaded and compiled in the background, so Justify is ready when the button is pressed.
   // If loading fails (e.g. the file is not next to index.html) this is silent; pressing the button tries again and shows the error.
-  loadKashida().then(K => {
+  if (!EMBED) loadKashida().then(K => {
     kash = K;
     try { if (jset.set !== 'custom' && !jSets[jset.set]) jSets[jset.set] = K.builtinPatternSet(jset.set); } catch (e) {}
   }).catch(() => {});
+  //#endif
   applyThemeColors();
   renderTests();
   {
@@ -3828,5 +4088,131 @@ If you have a heavy coat of long thick hairs it is easier for parasites to hide,
     const start = tests.find(t => t.name === last) || tests.find(t => t.name === DEFAULT_TEST) || tests[0];
     if (start) showTest(start);   // last selected test (kept on refresh); first run: Farsi
     else updateAbout();
+  }
+  let fontQueue = Promise.resolve();   // the embed's fonts load one after the other (declared before applyEmbed uses it)
+  if (EMBED) applyEmbed();
+
+  /* =================== Embed: apply the site owner's options =================== */
+  function embedTheme(theme, colorStr) {
+    let c = null;
+    const hex = (colorStr || '').split(',').map(v => '#' + v.trim().replace(/^#/, '').toLowerCase());
+    if (hex.length === FIELDS.length && hex.every(hexOk)) {
+      c = {}; FIELDS.forEach((k, i) => { c[k] = hex[i]; });
+    } else if (theme) {
+      const t = theme.trim().toLowerCase();
+      if (t === 'auto') {
+        const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+        c = { ...DEFAULT_THEME[dark ? 'dark' : 'light'] };
+      } else {
+        const p = PRESET_COLORS.find(x => x.name.toLowerCase() === t);
+        if (p) { c = {}; FIELDS.forEach(k => { c[k] = p[k]; }); }
+      }
+    }
+    if (!c) return;
+    // the dark-mode button comes back to these colors (memory only)
+    themeColors[isDarkHex(c.bg) ? 'dark' : 'light'] = { ...c };
+    setColors(c);
+  }
+  // light and dark theme of the site owner; the dark-mode button switches between the two
+  function themeOf(name, colorStr) {
+    const hex = (colorStr || '').split(',').map(v => '#' + v.trim().replace(/^#/, '').toLowerCase());
+    if (hex.length === FIELDS.length && hex.every(hexOk)) { const c = {}; FIELDS.forEach((k, i) => { c[k] = hex[i]; }); return c; }
+    const p = name && PRESET_COLORS.find(x => x.name.toLowerCase() === name.trim().toLowerCase());
+    if (!p) return null;
+    const c = {}; FIELDS.forEach(k => { c[k] = p[k]; }); return c;
+  }
+  function embedThemes(E) {
+    const L = themeOf(E.lightTheme, E.lightColors), D = themeOf(E.darkTheme, E.darkColors);
+    const start = E.theme.trim().toLowerCase();
+    if (!L && !D && !/^(light|dark|auto)?$/.test(start) || E.colors) { embedTheme(E.theme, E.colors); return; }   // older codes: one theme
+    if (L) themeColors.light = L;
+    if (D) themeColors.dark = D;
+    const sysDark = () => !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    const mode = start === 'dark' ? 'dark' : start === 'auto' ? (sysDark() ? 'dark' : 'light') : 'light';
+    forceDark(mode === 'dark');
+    paint(themeColors[mode]);
+  }
+  function embedText(text, name) {
+    if (!text) return;
+    const t = cleanTest({ name: name || 'Sample', text });
+    tests = tests.filter(x => x.name !== t.name);
+    tests.unshift(t);
+    showTest(t);
+  }
+  function applyEmbed() {
+    const E = EMBED;
+    // Test tab: the owner's tests and the built-in ones, in the owner's order; the first one is shown
+    const lc = s => s.toLowerCase();
+    const own = E.texts.map((text, i) => text.trim() && cleanTest({ name: (E.textNames[i] || '').trim() || 'Sample ' + (i + 1), text })).filter(Boolean);
+    let list;
+    if (E.order.length) {
+      list = [];
+      E.order.forEach(n => {
+        const t = own.find(x => lc(x.name) === n) || tests.find(x => lc(x.name) === n);
+        if (t && !list.includes(t)) list.push(t);
+      });
+    } else {
+      const base = E.tests ? tests.filter(t => E.tests.includes(lc(t.name))) : tests;
+      list = [...own, ...base.filter(t => !own.some(o => lc(o.name) === lc(t.name)))];
+    }
+    tests = list;
+    if (tests[0]) showTest(tests[0]);
+    else { activeTest = null; showPlain(testBox, ''); renderTests(); updateAbout(); }
+    embedThemes(E);
+    if (E.size != null) { sizeIn.value = E.size; sizeIn.dispatchEvent(new Event('input')); }
+    if (E.lh != null) { heightIn.value = E.lh; heightIn.dispatchEvent(new Event('input')); }
+    if (/^(left|right|center|justify)$/.test(E.align)) $('#al' + E.align).click();
+    if (E.scale != null) setScale(E.scale, false);
+    if (E.rows != null) setRows(Math.round(E.rows), false);   //#full
+    if (!E.edit) {   // read-only text: every box the tester (re)creates is locked too
+      const lock = () => $$('[contenteditable="true"]', testBox).forEach(el => el.setAttribute('contenteditable', 'false'));
+      lock();
+      new MutationObserver(lock).observe(testBox, { childList: true, subtree: true });
+    }
+    // fonts given as URLs (the plain-iframe code): fetched here, so their server must allow CORS.
+    // With embed.js the parent page sends the files instead (see 'fonts' below) and says so with pf.
+    if (E.fonts.length) embedFonts(E.fonts.map((url, i) => ({ url, label: E.labels[i] || '' })));
+    post({ fft: 'hello' });   // asks the parent page for its font files
+  }
+  // list: [{ buf, name, label } | { url, label }], in the order the owner chose; the first one is shown
+  function embedFonts(list) {
+    fontQueue = fontQueue.then(async () => {
+      let first = null, n = 0, failed = 0, err = '';
+      for (const f of list) {
+        let rec = null;
+        try {
+          if (f.buf instanceof ArrayBuffer) {
+            const name = String(f.name || 'Font');
+            rec = await addFont(f.buf, name, { file: new File([f.buf], name) }, String(f.label || ''), true);
+          } else if (typeof f.url === 'string' && /^https?:/i.test(f.url)) rec = await loadURL(f.url, String(f.label || ''), true);
+        } catch (e) { setStatus('Not a valid font file: ' + (f.name || f.url || '')); }
+        if (rec) { n++; if (!first) first = rec; } else { failed++; err = (f.label || f.name || (f.url || '').split('/').pop()) + ': ' + statusEl.textContent; }
+      }
+      if (first) activate(first);
+      // visitors get a plain message; the technical one (CORS, wrong URL…) stays for the builder's preview
+      if (failed) setStatus(EMBED.debug ? err : n ? 'Some fonts couldn’t be loaded.' : 'The font couldn’t be loaded.');
+      // none of the owner's fonts came: the tabs say so instead of describing the fallback font
+      if (failed && !n) { embedFontFailed = true; buildAxes(); }
+      document.documentElement.classList.remove('fft-wait');
+      post({ fft: 'ready', fonts: n });
+      postFeatures();
+    });
+  }
+
+  /* --- postMessage API: the parent page can change the embed after it has loaded ---
+     iframe.contentWindow.postMessage({ fft: 'text', text: '…' }, '*')
+     { fft: 'fonts', fonts: [{ buf: ArrayBuffer, name: 'A.woff2', label: 'My Font' }, { url, label }] }   { fft: 'font', url }   { fft: 'theme', theme: 'Ocean' } or { fft: 'theme', colors: '222222,f6f6f6,…' }
+     { fft: 'size', value }  */
+  function post(msg) { if (EMBED && window.parent !== window) window.parent.postMessage(msg, '*'); }
+  if (EMBED) {
+    window.addEventListener('message', e => {
+      const d = e.data;
+      if (!d || typeof d !== 'object' || typeof d.fft !== 'string') return;
+      if (d.fft === 'fonts' && Array.isArray(d.fonts)) embedFonts(d.fonts);
+      else if (d.fft === 'text' && typeof d.text === 'string') embedText(d.text, typeof d.name === 'string' ? d.name : 'Sample');
+      else if (d.fft === 'font') embedFonts([d]);
+      else if (d.fft === 'theme') embedTheme(String(d.theme || ''), String(d.colors || ''));
+      else if (d.fft === 'size' && isFinite(+d.value)) { sizeIn.value = +d.value; sizeIn.dispatchEvent(new Event('input')); }
+    });
   }
 })();

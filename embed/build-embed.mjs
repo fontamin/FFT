@@ -183,7 +183,13 @@ function minHtml(html) {
 const full = read('index.html');
 const fftVersion = (full.match(/class="about-ver">v([^<]+)</) || [])[1];
 if (!fftVersion) throw new Error('index.html: the FFT version (class="about-ver") was not found');
-const js = minJs(directives(read('script.js'), 'js'));
+// brotli.js (Google's Brotli decoder, MIT): loaded by the frame only in browsers without Brotli; its license header stays
+const brotliSrc = read('brotli.js');
+const brotliHead = brotliSrc.slice(0, brotliSrc.indexOf('(() => {'));
+const brotliLic = (brotliSrc.match(/\/\* Copyright[\s\S]*?\*\//) || [''])[0];
+const brotli = brotliHead + brotliLic + '\n' + minJs(brotliSrc.slice(brotliHead.length));
+const ver0 = s => EMBED_VERSION + '-' + createHash('sha256').update(s).digest('hex').slice(0, 8);
+const js = minJs(directives(read('script.js'), 'js')).replace('{{BROTLI_VERSION}}', ver0(brotli));
 const { css, dropped } = pruneCss(read('style.css'));
 // every file gets ?v=<FFT-Embed version>-<content hash>: a changed file has a new address, so no browser uses an old copy
 const ver = s => EMBED_VERSION + '-' + createHash('sha256').update(s).digest('hex').slice(0, 8);
@@ -200,11 +206,13 @@ const frameVer = ver(html);
   writeFileSync(join(ROOT, f), out);
 });
 writeFileSync(join(OUT, 'embed-frame.js'), js);
+if (OUT !== SRC) writeFileSync(join(OUT, 'brotli.js'), brotli);   // (in a single folder, the full app's brotli.js is used as it is)
 writeFileSync(join(OUT, 'embed-frame.css'), css);
 writeFileSync(join(OUT, 'embed-frame.html'), html);
 const kb = s => (Buffer.byteLength(s) / 1024).toFixed(1) + ' KB';
 console.log('FFT-Embed v' + EMBED_VERSION + ', built on FFT v' + fftVersion + ' (frame ' + frameVer + ')');
 console.log('source: ' + SRC + '\noutput: ' + OUT);
 console.log('embed-frame.html ' + kb(html) + '\nembed-frame.css  ' + kb(css) + '  (' + dropped.length + ' selectors dropped)\nembed-frame.js   ' + kb(js));
+console.log('brotli.js        ' + kb(brotli) + '  (loaded only by browsers without Brotli)');
 console.log('embed.js and embed-builder.html: frame version written');
 if (process.argv.includes('--verbose')) console.log('\nDropped selectors:\n  ' + dropped.join('\n  '));

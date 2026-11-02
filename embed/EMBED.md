@@ -29,13 +29,14 @@ In the FFT repository, the full app is in `FFT/` (the folder GitHub Pages publis
 `embed/` (not published):
 
 ```
-FFT/                    the full app: index.html, style.css, script.js, kashida.bundle.js
+FFT/                    the full app: index.html, style.css, script.js, kashida.bundle.js, brotli.js
 embed/                  the embed tools and sources
   build-embed.mjs       makes the three embed-frame files from FFT/
   embed-builder.html    the builder (index.html in FFT-Embed)
   embed.js              the loader
   EMBED.md              this file
   embed-frame.*         made by the build (in .gitignore), copied to FFT-Embed
+  brotli.js             made by the build from FFT/brotli.js (in .gitignore), copied to FFT-Embed
 ```
 
 | In FFT | In FFT-Embed | What it is |
@@ -44,6 +45,7 @@ embed/                  the embed tools and sources
 | `embed/embed.js` | `embed.js` | the loader that the site owner's code points to |
 | `embed/embed-frame.html`, `.css`, `.js` | same names | the tester inside the frame (built, see below) |
 | `embed/EMBED.md` | `EMBED.md`; `README.md` is its user-facing version | this file |
+| `embed/brotli.js` | `brotli.js` | Brotli decoder, made by the build from `FFT/brotli.js` |
 | `embed/build-embed.mjs` | — | makes the three `embed-frame` files from the full app |
 | `FFT/index.html`, `style.css`, `script.js`, `kashida.bundle.js` | — | the full app; the embed doesn't load any of them |
 
@@ -54,7 +56,7 @@ their own site if they use URLs.
 
 The three `embed-frame` files are made from the full app by `node embed/build-embed.mjs`, run from the root of the FFT
 repository (Node 16+, no dependencies). It reads `FFT/index.html`, `FFT/style.css` and `FFT/script.js` and writes into
-`embed/`. Run it after every change to the full app, then copy the three `embed-frame` files, `embed.js` and
+`embed/`. Run it after every change to the full app, then copy the three `embed-frame` files, `brotli.js`, `embed.js` and
 `embed-builder.html` (→ `index.html`) to FFT-Embed. What the embed leaves out is marked in the source:
 
 - JS: `//#if full` … `//#endif` (with an optional `//#else` part whose `//= ` lines are the embed's version),
@@ -69,6 +71,10 @@ The embed's About tab shows both: "FFT-Embed v1.0 / Built on FFT v1.51 · Custom
 **Cache.** Every file the frame loads gets `?v=<FFT-Embed version>-<content hash>`, and the build writes the frame page's
 own version into `embed.js` and `embed-builder.html` (the `FRAME` line). A changed file gets a new address, so browsers
 never use an old copy. After a build, copy `embed.js` and `embed-builder.html` (→ `index.html`) to FFT-Embed too.
+
+**woff2.** FFT reads a woff2 font's tables with the browser's `DecompressionStream('brotli')`. Browsers without it
+(Chrome on Android, for example) load `brotli.js`, Google's Brotli decoder (MIT), the first time a woff2 font is read;
+other browsers never load it. Without it, such a browser shows a woff2 font but can't read its name, axes or features.
 
 The build also strips comments and indentation. `node embed/build-embed.mjs --verbose` lists the CSS selectors it dropped.
 

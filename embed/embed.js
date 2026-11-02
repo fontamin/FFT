@@ -19,7 +19,7 @@
   'use strict';
   var me = document.currentScript;
   var BASE = (me && me.src ? me.src : location.href).replace(/[^\/]*([?#].*)?$/, '');   // folder of embed.js
-  var FRAME = 'embed-frame.html?v=1.0-ed7179a4';   // the version is written by build-embed.mjs (a new one = not taken from the cache)
+  var FRAME = 'embed-frame.html?v=1.0-8623a217';   // the version is written by build-embed.mjs (a new one = not taken from the cache)
   var SKIP = { fft: 1, fftdone: 1, height: 1, width: 1, position: 1, title: 1, font: 1, fonts: 1, label: 1, texts: 1, tests: 1 };
 
   function split(v) { return v == null ? [] : (Array.isArray(v) ? v : String(v).split('|')).map(function (s) { return String(s).trim(); }); }
