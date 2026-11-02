@@ -114,6 +114,9 @@
   .drow .tn, .drow .sub { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .drow .sub { color: var(--muted); font-size: .78rem; unicode-bidi: plaintext; }
   .drow .src { direction: ltr; text-align: left; }
+  .drow .srcin { margin-top: 4px; padding: 3px 8px; font-size: .78rem; color: var(--muted); background: transparent; border-color: transparent; text-align: left; }
+  .drow .srcin:hover { border-color: var(--line); }
+  .drow .srcin:focus { color: var(--text); background: var(--bg); border-color: var(--line); }
   .drow.off .tn { color: var(--muted); text-decoration: line-through; }
   .drow.editing { border-color: var(--accent); }
   .drow input[type=text] { padding: 4px 8px; }
@@ -803,7 +806,7 @@
       const row = document.createElement('div');
       row.className = 'drow'; row.dataset.i = i;
       row.innerHTML = handleHtml + '<div class="main"><input type="text" dir="auto" placeholder="The font’s own name" aria-label="Name in the Font tab">'
-        + '<span class="sub src"></span></div>'
+        + (f.kind === 'url' ? '<input type="url" class="srcin" dir="ltr" spellcheck="false" aria-label="Font URL" title="Click to edit the URL">' : '<span class="sub src"></span>') + '</div>'
         + (f.kind === 'file' ? '<button type="button" class="state b64" title="Put this font file in the code, as Base64"></button>' : '')
         + '<button type="button" class="del" title="Remove" aria-label="Remove">' + ICON.del + '</button>';
       if (f.kind === 'file') {
@@ -817,7 +820,22 @@
       inp.value = f.label || '';
       inp.addEventListener('input', () => { f.label = inp.value.trim(); update(); });
       row.querySelector('.del').addEventListener('click', () => { fonts.splice(i, 1); renderFonts(); });
-      row.querySelector('.src').textContent = f.kind === 'file' ? f.name + ' · ' + kb(f.buf.byteLength) : f.url;
+      if (f.kind === 'file') row.querySelector('.src').textContent = f.name + ' · ' + kb(f.buf.byteLength);
+      else {
+        // the URL can be corrected in place (Enter or leaving the box applies it; Escape puts the old one back)
+        const u = row.querySelector('.srcin');
+        u.value = f.url;
+        const apply = () => {
+          const v = u.value.trim();
+          if (!v) { u.value = f.url; return; }
+          if (v !== f.url) { f.url = v; lastHash = null; update(); }
+        };
+        u.addEventListener('change', apply);
+        u.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); apply(); u.blur(); }
+          else if (e.key === 'Escape') { u.value = f.url; u.blur(); }
+        });
+      }
       box.appendChild(row);
     });
     lastHash = null;   // the preview gets the new list
